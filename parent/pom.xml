@@ -87,7 +87,7 @@
         <cxf.osgi.jakarta.transaction.version>[2,3)</cxf.osgi.jakarta.transaction.version>
 
         <!-- please maintain alphabetical order here -->
-        <cxf.activemq.artemis.version>2.31.2</cxf.activemq.artemis.version>
+        <cxf.activemq.artemis.version>2.35.0</cxf.activemq.artemis.version>
         <cxf.ahc.version>2.12.3</cxf.ahc.version>
         <cxf.arquillian.version>1.8.0.Final</cxf.arquillian.version>
         <cxf.arquillian.weld.container.version>3.0.2.Final</cxf.arquillian.weld.container.version>
@@ -212,18 +212,18 @@
         <cxf.slf4j.version>2.0.13</cxf.slf4j.version>
         <cxf.snakeyaml.version>2.2</cxf.snakeyaml.version>
         <cxf.specs.jaxws.api.version>2.3_2</cxf.specs.jaxws.api.version>
-        <cxf.spring.boot.version>3.3.1</cxf.spring.boot.version>
+        <cxf.spring.boot.version>3.3.2</cxf.spring.boot.version>
         <cxf.spring.ldap.version>3.2.4</cxf.spring.ldap.version>
         <cxf.spring.mock>spring-test</cxf.spring.mock>
         <cxf.spring.security.version>6.3.1</cxf.spring.security.version>
-        <cxf.spring.version>6.1.10</cxf.spring.version>
+        <cxf.spring.version>6.1.11</cxf.spring.version>
         <cxf.stax-ex.version>1.8.3</cxf.stax-ex.version>
         <cxf.swagger.ui.version>5.17.14</cxf.swagger.ui.version>
         <cxf.swagger.v3.version>2.2.22</cxf.swagger.v3.version>
         <cxf.tika.version>2.9.1</cxf.tika.version>
-        <cxf.tomcat.version>10.1.25</cxf.tomcat.version>
+        <cxf.tomcat.version>10.1.26</cxf.tomcat.version>
         <cxf.tomitribe.http.signature.version>1.8</cxf.tomitribe.http.signature.version>
-        <cxf.undertow.version>2.3.14.Final</cxf.undertow.version>
+        <cxf.undertow.version>2.3.15.Final</cxf.undertow.version>
         <cxf.yasson.version>3.0.3</cxf.yasson.version>
         <!-- the Export-Package is the same as the Maven artifact
              version (with the Final), but we don't want an import package with a version
