@@ -100,12 +100,12 @@
         <cxf.cdi.api.version>4.0.1</cxf.cdi.api.version>
         <cxf.classgraph.version>4.8.25</cxf.classgraph.version>
         <cxf.classmate.version>1.5.1</cxf.classmate.version>
-        <cxf.commons-codec.version>1.17.0</cxf.commons-codec.version>
+        <cxf.commons-codec.version>1.17.1</cxf.commons-codec.version>
         <cxf.commons-io.version>2.16.1</cxf.commons-io.version>
         <cxf.commons-jcs-jcache.version>2.2.1</cxf.commons-jcs-jcache.version>
         <cxf.commons-lang3.version>3.14.0</cxf.commons-lang3.version>
         <cxf.commons-logging.version>1.2</cxf.commons-logging.version>
-        <cxf.commons-text.version>1.10.0</cxf.commons-text.version>
+        <cxf.commons-text.version>1.12.0</cxf.commons-text.version>
         <cxf.derby.version>10.16.1.1</cxf.derby.version>
         <cxf.dom4j.version>2.1.4</cxf.dom4j.version>
         <cxf.dropwizard3.version>3.2.6</cxf.dropwizard3.version>
@@ -209,7 +209,7 @@
         <cxf.servlet-api.artifact>jakarta.servlet-api</cxf.servlet-api.artifact>
         <cxf.servlet-api.group>jakarta.servlet</cxf.servlet-api.group>
         <cxf.servlet-api.version>6.0.0</cxf.servlet-api.version>
-        <cxf.slf4j.version>2.0.13</cxf.slf4j.version>
+        <cxf.slf4j.version>2.0.15</cxf.slf4j.version>
         <cxf.snakeyaml.version>2.2</cxf.snakeyaml.version>
         <cxf.specs.jaxws.api.version>2.3_2</cxf.specs.jaxws.api.version>
         <cxf.spring.boot.version>3.3.2</cxf.spring.boot.version>
@@ -224,7 +224,7 @@
         <cxf.tomcat.version>10.1.26</cxf.tomcat.version>
         <cxf.tomitribe.http.signature.version>1.8</cxf.tomitribe.http.signature.version>
         <cxf.undertow.version>2.3.15.Final</cxf.undertow.version>
-        <cxf.yasson.version>3.0.3</cxf.yasson.version>
+        <cxf.yasson.version>3.0.4</cxf.yasson.version>
         <!-- the Export-Package is the same as the Maven artifact
              version (with the Final), but we don't want an import package with a version
              with a qualifier. We do want a range. -->
@@ -276,7 +276,7 @@
         <cxf.xmlresolver.bundle.version>1.2_5</cxf.xmlresolver.bundle.version>
         <cxf.xpp3.bundle.version>1.1.4c_6</cxf.xpp3.bundle.version>
         <!-- Downgrade to 4.2.0 due to https://github.com/awaitility/awaitility/pull/279 -->
-        <cxf.awaitility.version>4.2.0</cxf.awaitility.version>
+        <cxf.awaitility.version>4.2.2</cxf.awaitility.version>
     </properties>
     <build>
         <resources>
