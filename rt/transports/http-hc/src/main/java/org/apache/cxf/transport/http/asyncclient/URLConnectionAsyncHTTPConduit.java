@@ -416,11 +416,16 @@ public class URLConnectionAsyncHTTPConduit extends URLConnectionHTTPConduit {
             }
             closed = true;
             if (!chunking && wrappedStream instanceof CachedOutputStream) {
-                CachedOutputStream out = (CachedOutputStream)wrappedStream;
-                this.basicEntity.setContentLength(out.size());
-                wrappedStream = null;
-                handleHeadersTrustCaching();
-                out.writeCacheTo(wrappedStream);
+                try (CachedOutputStream out = (CachedOutputStream)wrappedStream) {
+                    this.basicEntity.setContentLength(out.size());
+                    wrappedStream = null;
+                    handleHeadersTrustCaching();
+                    // The wrappedStrem could be null for KNOWN_HTTP_VERBS_WITH_NO_CONTENT or empty
+                    // requests (org.apache.cxf.empty.request)
+                    if (wrappedStream != null) {
+                        out.writeCacheTo(wrappedStream);
+                    }
+                }
             }
             super.close();
         }
