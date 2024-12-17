@@ -169,7 +169,7 @@
         <cxf.json.bind-api.version>3.0.1</cxf.json.bind-api.version>
         <cxf.jsr250.api.version>1.0</cxf.jsr250.api.version>
         <cxf.junit.version>4.13.2</cxf.junit.version>
-        <cxf.junit5.version>5.11.3</cxf.junit5.version>
+        <cxf.junit5.version>5.11.4</cxf.junit5.version>
         <cxf.kerby.version>2.0.3</cxf.kerby.version>
         <cxf.ldapsdk.version>7.0.2</cxf.ldapsdk.version>
         <cxf.littleproxy.version>1.1.2</cxf.littleproxy.version>
@@ -214,13 +214,13 @@
         <cxf.spring.boot.version>3.4.0</cxf.spring.boot.version>
         <cxf.spring.ldap.version>3.2.10</cxf.spring.ldap.version>
         <cxf.spring.mock>spring-test</cxf.spring.mock>
-        <cxf.spring.security.version>6.4.1</cxf.spring.security.version>
+        <cxf.spring.security.version>6.4.2</cxf.spring.security.version>
         <cxf.spring.version>6.2.1</cxf.spring.version>
         <cxf.stax-ex.version>1.8.3</cxf.stax-ex.version>
         <cxf.swagger.ui.version>5.18.2</cxf.swagger.ui.version>
         <cxf.swagger.v3.version>2.2.27</cxf.swagger.v3.version>
         <cxf.tika.version>3.0.0</cxf.tika.version>
-        <cxf.tomcat.version>10.1.31</cxf.tomcat.version>
+        <cxf.tomcat.version>10.1.34</cxf.tomcat.version>
         <cxf.tomitribe.http.signature.version>1.8</cxf.tomitribe.http.signature.version>
         <cxf.undertow.version>2.3.18.Final</cxf.undertow.version>
         <cxf.yasson.version>3.0.4</cxf.yasson.version>
