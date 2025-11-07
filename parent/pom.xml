@@ -88,11 +88,11 @@
         <cxf.osgi.jakarta.transaction.version>[2,3)</cxf.osgi.jakarta.transaction.version>
 
         <!-- please maintain alphabetical order here -->
-        <cxf.activemq.artemis.version>2.43.0</cxf.activemq.artemis.version>
+        <cxf.activemq.artemis.version>2.44.0</cxf.activemq.artemis.version>
         <cxf.ahc.version>3.0.3</cxf.ahc.version>
         <cxf.arquillian.version>1.8.1.Final</cxf.arquillian.version>
         <cxf.arquillian.weld.container.version>3.0.2.Final</cxf.arquillian.weld.container.version>
-        <cxf.aspectj.version>1.9.24</cxf.aspectj.version>
+        <cxf.aspectj.version>1.9.25</cxf.aspectj.version>
         <cxf.assertj.version>3.27.6</cxf.assertj.version>
         <cxf.atmosphere.version.range>[3.0, 4.0)</cxf.atmosphere.version.range>
         <cxf.atmosphere.version>3.0.14</cxf.atmosphere.version>
@@ -131,8 +131,8 @@
         <cxf.httpcomponents.core.version>4.4.16</cxf.httpcomponents.core.version>
         <cxf.httpcomponents.client5.version>5.4.4</cxf.httpcomponents.client5.version>
         <cxf.httpcomponents.core5.version>5.3.6</cxf.httpcomponents.core5.version>
-        <cxf.jackson.version>2.20.0</cxf.jackson.version>
-        <cxf.jackson.databind.version>2.20.0</cxf.jackson.databind.version>
+        <cxf.jackson.version>2.20.1</cxf.jackson.version>
+        <cxf.jackson.databind.version>2.20.1</cxf.jackson.databind.version>
         <cxf.jackson.annotations.version>2.20</cxf.jackson.annotations.version>
         <cxf.jacorb.version>3.9</cxf.jacorb.version>
         <cxf.jaeger.version>1.8.1</cxf.jaeger.version>
@@ -170,15 +170,15 @@
         <cxf.json.bind-api.version>3.0.1</cxf.json.bind-api.version>
         <cxf.jsr250.api.version>1.0</cxf.jsr250.api.version>
         <cxf.junit.version>4.13.2</cxf.junit.version>
-        <cxf.junit5.version>5.14.0</cxf.junit5.version>
+        <cxf.junit5.version>5.14.1</cxf.junit5.version>
         <cxf.kerby.version>2.0.3</cxf.kerby.version>
         <cxf.ldapsdk.version>7.0.3</cxf.ldapsdk.version>
         <cxf.littleproxy.version>2.4.6</cxf.littleproxy.version>
         <cxf.logback.classic.version>1.5.20</cxf.logback.classic.version>
         <cxf.lucene.version>9.12.1</cxf.lucene.version>
         <cxf.maven.core.version>3.9.10</cxf.maven.core.version>
-        <cxf.micrometer.version>1.14.12</cxf.micrometer.version>
-        <cxf.micrometer-tracing.version>1.4.11</cxf.micrometer-tracing.version>
+        <cxf.micrometer.version>1.14.13</cxf.micrometer.version>
+        <cxf.micrometer-tracing.version>1.4.12</cxf.micrometer-tracing.version>
         <cxf.microprofile.config.version>3.1</cxf.microprofile.config.version>
         <cxf.microprofile.rest.client.version>3.0.1</cxf.microprofile.rest.client.version>
         <cxf.microprofile.openapi.version>3.1.2</cxf.microprofile.openapi.version>
@@ -218,10 +218,10 @@
         <cxf.spring.security.version>6.4.12</cxf.spring.security.version>
         <cxf.spring.version>6.2.12</cxf.spring.version>
         <cxf.stax-ex.version>1.8.3</cxf.stax-ex.version>
-        <cxf.swagger.ui.version>5.30.0</cxf.swagger.ui.version>
+        <cxf.swagger.ui.version>5.30.1</cxf.swagger.ui.version>
         <cxf.swagger.v3.version>2.2.40</cxf.swagger.v3.version>
         <cxf.tika.version>3.0.0</cxf.tika.version>
-        <cxf.tomcat.version>10.1.47</cxf.tomcat.version>
+        <cxf.tomcat.version>10.1.48</cxf.tomcat.version>
         <cxf.tomitribe.http.signature.version>1.8</cxf.tomitribe.http.signature.version>
         <cxf.undertow.version>2.3.20.Final</cxf.undertow.version>
         <cxf.yasson.version>3.0.4</cxf.yasson.version>
@@ -236,8 +236,8 @@
         <cxf.woodstox.core.version>7.1.1</cxf.woodstox.core.version>
         <cxf.woodstox.stax2-api.version>4.2.1</cxf.woodstox.stax2-api.version>
         <cxf.wsdl4j.version>1.6.3</cxf.wsdl4j.version>
-        <cxf.jakarta.wss4j.version>4.0.0</cxf.jakarta.wss4j.version>
-        <cxf.xmlschema.version>2.3.1</cxf.xmlschema.version>
+        <cxf.jakarta.wss4j.version>4.0.1</cxf.jakarta.wss4j.version>
+        <cxf.xmlschema.version>2.3.2</cxf.xmlschema.version>
         <cxf.xnio.version>3.8.17.Final</cxf.xnio.version>
         <cxf.zest.version>2.1</cxf.zest.version>
         <cxf.zipkin-reporter.version>3.5.1</cxf.zipkin-reporter.version>
