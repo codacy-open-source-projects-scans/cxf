@@ -191,13 +191,13 @@
         <cxf.netty.tcnative.version>2.0.69.Final</cxf.netty.tcnative.version>
         <cxf.olingo.version>2.0.13</cxf.olingo.version>
         <cxf.openjpa.version>3.2.2</cxf.openjpa.version>
-        <cxf.opentelemetry.version>1.55.0</cxf.opentelemetry.version>
+        <cxf.opentelemetry.version>1.56.0</cxf.opentelemetry.version>
         <cxf.opentelemetry.semconv.version>1.29.0-alpha</cxf.opentelemetry.semconv.version>
         <cxf.opentracing.version>0.33.0</cxf.opentracing.version>
         <cxf.openwebbeans.version>2.0.28</cxf.openwebbeans.version>
         <cxf.parsson.version>1.1.7</cxf.parsson.version>
         <cxf.persistence-api.version>3.1.0</cxf.persistence-api.version>
-        <cxf.plexus-archiver.version>4.10.3</cxf.plexus-archiver.version>
+        <cxf.plexus-archiver.version>4.10.4</cxf.plexus-archiver.version>
         <cxf.plexus-utils.version>3.5.1</cxf.plexus-utils.version>
         <cxf.reactivestreams.version>1.0.4</cxf.reactivestreams.version>
         <cxf.reactor.version>3.7.12</cxf.reactor.version>
