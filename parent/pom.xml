@@ -89,7 +89,7 @@
 
         <!-- please maintain alphabetical order here -->
         <cxf.activemq.artemis.version>2.44.0</cxf.activemq.artemis.version>
-        <cxf.ahc.version>3.0.3</cxf.ahc.version>
+        <cxf.ahc.version>3.0.4</cxf.ahc.version>
         <cxf.arquillian.version>1.8.1.Final</cxf.arquillian.version>
         <cxf.arquillian.weld.container.version>3.0.2.Final</cxf.arquillian.weld.container.version>
         <cxf.aspectj.version>1.9.25</cxf.aspectj.version>
@@ -232,7 +232,7 @@
         <cxf.validation.api.version>3.0.2</cxf.validation.api.version>
         <cxf.velocity.version>2.4.1</cxf.velocity.version>
         <cxf.wildfly.common.version>2.0.1</cxf.wildfly.common.version>
-        <cxf.wiremock.version>3.13.1</cxf.wiremock.version>
+        <cxf.wiremock.version>3.13.2</cxf.wiremock.version>
         <cxf.woodstox.core.version>7.1.1</cxf.woodstox.core.version>
         <cxf.woodstox.stax2-api.version>4.2.1</cxf.woodstox.stax2-api.version>
         <cxf.wsdl4j.version>1.6.3</cxf.wsdl4j.version>
