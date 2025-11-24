@@ -21,7 +21,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.cxf</groupId>
     <artifactId>cxf</artifactId>
-    <version>4.1.5-SNAPSHOT</version>
+    <version>4.2.0-SNAPSHOT</version>
     <name>Apache CXF</name>
     <description>Apache CXF is an open-source services framework that aids in 
     the development of services using front-end programming APIs, like JAX-WS 
@@ -428,6 +428,18 @@
                     <plugin>
                         <groupId>org.owasp</groupId>
                         <artifactId>dependency-check-maven</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>sonar</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonarsource.scanner.maven</groupId>
+                        <artifactId>sonar-maven-plugin</artifactId>
+                        <version>5.3.0.6276</version>
                     </plugin>
                 </plugins>
             </build>
