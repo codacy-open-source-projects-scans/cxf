@@ -57,7 +57,7 @@
         <!-- stuff related to ASM -->
         <cxf.asm.groupId>org.ow2.asm</cxf.asm.groupId>
         <cxf.asm.artifactId>asm</cxf.asm.artifactId>
-        <cxf.asm.version>9.9</cxf.asm.version>
+        <cxf.asm.version>9.9.1</cxf.asm.version>
 
         <!-- OSGi related properties -->
         <cxf.fragment.host />
@@ -121,7 +121,7 @@
         <cxf.glassfish.json.version>2.0.1</cxf.glassfish.json.version>
         <cxf.hamcrest.version>3.0</cxf.hamcrest.version>
         <cxf.hazelcast.version>5.6.0</cxf.hazelcast.version>
-        <cxf.hibernate.em.version>7.1.11.Final</cxf.hibernate.em.version>
+        <cxf.hibernate.em.version>7.2.0.Final</cxf.hibernate.em.version>
         <cxf.hibernate.validator.version>9.1.0.Final</cxf.hibernate.validator.version>
         <cxf.hsqldb.version>2.7.4</cxf.hsqldb.version>
         <cxf.httpcomponents.asyncclient.version.range>[4.0,4.2)</cxf.httpcomponents.asyncclient.version.range>
@@ -174,7 +174,7 @@
         <cxf.kerby.version>2.1.1</cxf.kerby.version>
         <cxf.ldapsdk.version>7.0.4</cxf.ldapsdk.version>
         <cxf.littleproxy.version>2.4.6</cxf.littleproxy.version>
-        <cxf.logback.classic.version>1.5.21</cxf.logback.classic.version>
+        <cxf.logback.classic.version>1.5.22</cxf.logback.classic.version>
         <cxf.lucene.version>10.3.1</cxf.lucene.version>
         <cxf.maven.core.version>3.9.10</cxf.maven.core.version>
         <cxf.micrometer.version>1.16.1</cxf.micrometer.version>
@@ -212,7 +212,7 @@
         <cxf.slf4j.version>2.0.17</cxf.slf4j.version>
         <cxf.snakeyaml.version>2.5</cxf.snakeyaml.version>
         <cxf.specs.jaxws.api.version>2.3_2</cxf.specs.jaxws.api.version>
-        <cxf.spring.boot.version>4.0.0</cxf.spring.boot.version>
+        <cxf.spring.boot.version>4.0.1</cxf.spring.boot.version>
         <cxf.spring.ldap.version>4.0.1</cxf.spring.ldap.version>
         <cxf.spring.mock>spring-test</cxf.spring.mock>
         <cxf.spring.security.version>7.0.2</cxf.spring.security.version>
@@ -221,7 +221,7 @@
         <cxf.swagger.ui.version>5.30.3</cxf.swagger.ui.version>
         <cxf.swagger.v3.version>2.2.41</cxf.swagger.v3.version>
         <cxf.tika.version>3.2.3</cxf.tika.version>
-        <cxf.tomcat.version>11.0.14</cxf.tomcat.version>
+        <cxf.tomcat.version>11.0.15</cxf.tomcat.version>
         <cxf.tomitribe.http.signature.version>1.8</cxf.tomitribe.http.signature.version>
         <cxf.undertow.version>2.4.0.Alpha1</cxf.undertow.version>
         <cxf.undertow.ee.version>2.0.0.Alpha2</cxf.undertow.ee.version>
@@ -395,7 +395,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>12.2.0</version>
+                            <version>12.3.0</version>
                         </dependency>
                     </dependencies>
                     <configuration>
