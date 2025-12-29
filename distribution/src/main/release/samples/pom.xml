@@ -36,14 +36,14 @@
         <cxf.jetty12.version>12.1.5</cxf.jetty12.version>
         <cxf.netty.version>4.2.9.Final</cxf.netty.version>
         <cxf.httpcomponents.client.version>4.5.14</cxf.httpcomponents.client.version>
-        <cxf.swagger.ui.version>5.30.3</cxf.swagger.ui.version>
+        <cxf.swagger.ui.version>5.31.0</cxf.swagger.ui.version>
         <cxf.tika.version>3.2.3</cxf.tika.version>
         <cxf.tomcat.version>11.0.15</cxf.tomcat.version>
         <cxf.jboss.weld.version>6.0.3.Final</cxf.jboss.weld.version>
         <cxf.gson.version>2.13.2</cxf.gson.version>
-        <cxf.lucene.version>10.3.1</cxf.lucene.version>
+        <cxf.lucene.version>10.3.2</cxf.lucene.version>
         <cxf.olingo.server.version>5.0.0</cxf.olingo.server.version>
-        <cxf.aspectj.version>1.9.25</cxf.aspectj.version>
+        <cxf.aspectj.version>1.9.25.1</cxf.aspectj.version>
         <cxf.brave.version>6.3.0</cxf.brave.version>
         <cxf.zipkin-reporter.version>3.5.1</cxf.zipkin-reporter.version>
         <cxf.zest.version>2.1</cxf.zest.version>
