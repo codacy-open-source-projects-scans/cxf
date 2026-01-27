@@ -133,7 +133,7 @@
         <cxf.httpcomponents.core5.version>5.4</cxf.httpcomponents.core5.version>
         <cxf.jackson.version>3.0.3</cxf.jackson.version>
         <cxf.jackson.databind.version>3.0.3</cxf.jackson.databind.version>
-        <cxf.jackson.annotations.version>2.20</cxf.jackson.annotations.version>
+        <cxf.jackson.annotations.version>2.21</cxf.jackson.annotations.version>
         <cxf.jacorb.version>3.9</cxf.jacorb.version>
         <cxf.jaeger.version>1.8.1</cxf.jaeger.version>
         <cxf.jakarta.activation.version>2.1.4</cxf.jakarta.activation.version>
@@ -174,7 +174,7 @@
         <cxf.junit6.version>6.0.2</cxf.junit6.version>
         <cxf.kerby.version>2.1.1</cxf.kerby.version>
         <cxf.ldapsdk.version>7.0.4</cxf.ldapsdk.version>
-        <cxf.littleproxy.version>2.5.0</cxf.littleproxy.version>
+        <cxf.littleproxy.version>2.6.0</cxf.littleproxy.version>
         <cxf.logback.classic.version>1.5.25</cxf.logback.classic.version>
         <cxf.lucene.version>10.3.2</cxf.lucene.version>
         <cxf.maven.core.version>3.9.10</cxf.maven.core.version>
@@ -220,7 +220,7 @@
         <cxf.spring.version>7.0.3</cxf.spring.version>
         <cxf.stax-ex.version>1.8.3</cxf.stax-ex.version>
         <cxf.swagger.ui.version>5.31.0</cxf.swagger.ui.version>
-        <cxf.swagger.v3.version>2.2.41</cxf.swagger.v3.version>
+        <cxf.swagger.v3.version>2.2.42</cxf.swagger.v3.version>
         <cxf.tika.version>3.2.3</cxf.tika.version>
         <cxf.tomcat.version>11.0.15</cxf.tomcat.version>
         <cxf.tomitribe.http.signature.version>1.8</cxf.tomitribe.http.signature.version>
