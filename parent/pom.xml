@@ -119,6 +119,7 @@
         <cxf.geronimo.openapi.version>1.0.15</cxf.geronimo.openapi.version>
         <cxf.glassfish.el.version>4.0.2</cxf.glassfish.el.version>
         <cxf.glassfish.json.version>2.0.1</cxf.glassfish.json.version>
+        <cxf.grizzly.version>5.0.0</cxf.grizzly.version>
         <cxf.hamcrest.version>3.0</cxf.hamcrest.version>
         <cxf.hazelcast.version>5.6.0</cxf.hazelcast.version>
         <cxf.hibernate.em.version>7.2.1.Final</cxf.hibernate.em.version>
@@ -131,8 +132,8 @@
         <cxf.httpcomponents.core.version>4.4.16</cxf.httpcomponents.core.version>
         <cxf.httpcomponents.client5.version>5.6</cxf.httpcomponents.client5.version>
         <cxf.httpcomponents.core5.version>5.4</cxf.httpcomponents.core5.version>
-        <cxf.jackson.version>3.0.3</cxf.jackson.version>
-        <cxf.jackson.databind.version>3.0.3</cxf.jackson.databind.version>
+        <cxf.jackson.version>3.0.4</cxf.jackson.version>
+        <cxf.jackson.databind.version>3.0.4</cxf.jackson.databind.version>
         <cxf.jackson.annotations.version>2.21</cxf.jackson.annotations.version>
         <cxf.jacorb.version>3.9</cxf.jacorb.version>
         <cxf.jaeger.version>1.8.1</cxf.jaeger.version>
@@ -222,7 +223,7 @@
         <cxf.swagger.ui.version>5.31.0</cxf.swagger.ui.version>
         <cxf.swagger.v3.version>2.2.42</cxf.swagger.v3.version>
         <cxf.tika.version>3.2.3</cxf.tika.version>
-        <cxf.tomcat.version>11.0.15</cxf.tomcat.version>
+        <cxf.tomcat.version>11.0.18</cxf.tomcat.version>
         <cxf.tomitribe.http.signature.version>1.8</cxf.tomitribe.http.signature.version>
         <cxf.undertow.version>2.4.0.Alpha1</cxf.undertow.version>
         <cxf.undertow.ee.version>2.0.0.Alpha2</cxf.undertow.ee.version>
@@ -2369,6 +2370,7 @@
             <properties>
                 <cxf.derby.version>10.16.1.1</cxf.derby.version>
                 <cxf.lucene.version>9.12.3</cxf.lucene.version>
+                <cxf.grizzly.version>4.0.2</cxf.grizzly.version>
             </properties>
         </profile>
     </profiles>
