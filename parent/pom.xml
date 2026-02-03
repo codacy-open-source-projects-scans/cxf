@@ -122,7 +122,7 @@
         <cxf.grizzly.version>5.0.0</cxf.grizzly.version>
         <cxf.hamcrest.version>3.0</cxf.hamcrest.version>
         <cxf.hazelcast.version>5.6.0</cxf.hazelcast.version>
-        <cxf.hibernate.em.version>7.2.1.Final</cxf.hibernate.em.version>
+        <cxf.hibernate.em.version>7.2.2.Final</cxf.hibernate.em.version>
         <cxf.hibernate.validator.version>9.1.0.Final</cxf.hibernate.validator.version>
         <cxf.hsqldb.version>2.7.4</cxf.hsqldb.version>
         <cxf.httpcomponents.asyncclient.version.range>[4.0,4.2)</cxf.httpcomponents.asyncclient.version.range>
@@ -156,13 +156,13 @@
         <cxf.jaxb.version>4.0.4</cxf.jaxb.version>
         <cxf.jaxb.xjc.version>${cxf.jaxb.runtime.version}</cxf.jaxb.xjc.version>
         <cxf.jaxen.version>2.0.0</cxf.jaxen.version>
-        <cxf.jboss.logging.version>3.6.1.Final</cxf.jboss.logging.version>
+        <cxf.jboss.logging.version>3.6.2.Final</cxf.jboss.logging.version>
         <cxf.jboss.weld.version>6.0.4.Final</cxf.jboss.weld.version>
         <cxf.jboss.narayana.version>5.13.1.Final</cxf.jboss.narayana.version>
         <cxf.jcache.version>1.1.1</cxf.jcache.version>
         <cxf.jdom.version>1.0</cxf.jdom.version>
         <cxf.jettison.version>1.5.4</cxf.jettison.version>
-        <cxf.jetty12.version>12.1.5</cxf.jetty12.version>
+        <cxf.jetty12.version>12.1.6</cxf.jetty12.version>
         <cxf.jetty.version>${cxf.jetty12.version}</cxf.jetty.version>
         <cxf.jexl.version>3.5.0</cxf.jexl.version>
         <cxf.joda.time.version>2.10.10</cxf.joda.time.version>
@@ -176,7 +176,7 @@
         <cxf.kerby.version>2.1.1</cxf.kerby.version>
         <cxf.ldapsdk.version>7.0.4</cxf.ldapsdk.version>
         <cxf.littleproxy.version>2.6.0</cxf.littleproxy.version>
-        <cxf.logback.classic.version>1.5.25</cxf.logback.classic.version>
+        <cxf.logback.classic.version>1.5.26</cxf.logback.classic.version>
         <cxf.lucene.version>10.3.2</cxf.lucene.version>
         <cxf.maven.core.version>3.9.10</cxf.maven.core.version>
         <cxf.micrometer.version>1.16.2</cxf.micrometer.version>
