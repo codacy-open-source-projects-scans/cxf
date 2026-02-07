@@ -107,6 +107,7 @@
         <cxf.commons-lang3.version>3.20.0</cxf.commons-lang3.version>
         <cxf.commons-logging.version>1.3.5</cxf.commons-logging.version>
         <cxf.commons-text.version>1.15.0</cxf.commons-text.version>
+        <cxf.checkstyle.version>13.1.0</cxf.checkstyle.version>
         <cxf.derby.version>10.17.1.0</cxf.derby.version>
         <cxf.dom4j.version>2.2.0</cxf.dom4j.version>
         <cxf.dropwizard3.version>3.2.6</cxf.dropwizard3.version>
@@ -122,7 +123,7 @@
         <cxf.grizzly.version>5.0.0</cxf.grizzly.version>
         <cxf.hamcrest.version>3.0</cxf.hamcrest.version>
         <cxf.hazelcast.version>5.6.0</cxf.hazelcast.version>
-        <cxf.hibernate.em.version>7.2.2.Final</cxf.hibernate.em.version>
+        <cxf.hibernate.em.version>7.2.3.Final</cxf.hibernate.em.version>
         <cxf.hibernate.validator.version>9.1.0.Final</cxf.hibernate.validator.version>
         <cxf.hsqldb.version>2.7.4</cxf.hsqldb.version>
         <cxf.httpcomponents.asyncclient.version.range>[4.0,4.2)</cxf.httpcomponents.asyncclient.version.range>
@@ -397,7 +398,7 @@
                         <dependency>
                             <groupId>com.puppycrawl.tools</groupId>
                             <artifactId>checkstyle</artifactId>
-                            <version>12.3.1</version>
+                            <version>${cxf.checkstyle.version}</version>
                         </dependency>
                     </dependencies>
                     <configuration>
@@ -590,7 +591,7 @@
                         <dependency>
                             <groupId>org.apache.groovy</groupId>
                             <artifactId>groovy</artifactId>
-                            <version>5.0.3</version>
+                            <version>5.0.4</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -869,7 +870,7 @@
             <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
                 <artifactId>maven-plugin-annotations</artifactId>
-                <version>3.15.1</version>
+                <version>3.15.2</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
@@ -1769,22 +1770,22 @@
                 <version>${cxf.jakarta.ejb.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.activemq</groupId>
+                <groupId>org.apache.artemis</groupId>
                 <artifactId>artemis-jakarta-server</artifactId>
                 <version>${cxf.activemq.artemis.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.activemq</groupId>
+                <groupId>org.apache.artemis</groupId>
                 <artifactId>artemis-jakarta-client</artifactId>
                 <version>${cxf.activemq.artemis.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.activemq</groupId>
+                <groupId>org.apache.artemis</groupId>
                 <artifactId>artemis-jakarta-ra</artifactId>
                 <version>${cxf.activemq.artemis.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.activemq</groupId>
+                <groupId>org.apache.artemis</groupId>
                 <artifactId>artemis-junit</artifactId>
                 <version>${cxf.activemq.artemis.version}</version>
                 <scope>test</scope>
@@ -2371,6 +2372,7 @@
                 <cxf.derby.version>10.16.1.1</cxf.derby.version>
                 <cxf.lucene.version>9.12.3</cxf.lucene.version>
                 <cxf.grizzly.version>4.0.2</cxf.grizzly.version>
+                <cxf.checkstyle.version>12.3.1</cxf.checkstyle.version>
             </properties>
         </profile>
     </profiles>
