@@ -88,7 +88,7 @@
         <cxf.osgi.jakarta.transaction.version>[2,3)</cxf.osgi.jakarta.transaction.version>
 
         <!-- please maintain alphabetical order here -->
-        <cxf.activemq.artemis.version>2.50.0</cxf.activemq.artemis.version>
+        <cxf.activemq.artemis.version>2.51.0</cxf.activemq.artemis.version>
         <cxf.ahc.version>3.0.6</cxf.ahc.version>
         <cxf.arquillian.version>1.10.0.Final</cxf.arquillian.version>
         <cxf.arquillian.weld.container.version>4.0.0.Final</cxf.arquillian.weld.container.version>
@@ -107,7 +107,7 @@
         <cxf.commons-lang3.version>3.20.0</cxf.commons-lang3.version>
         <cxf.commons-logging.version>1.3.5</cxf.commons-logging.version>
         <cxf.commons-text.version>1.15.0</cxf.commons-text.version>
-        <cxf.checkstyle.version>13.1.0</cxf.checkstyle.version>
+        <cxf.checkstyle.version>13.2.0</cxf.checkstyle.version>
         <cxf.derby.version>10.17.1.0</cxf.derby.version>
         <cxf.dom4j.version>2.2.0</cxf.dom4j.version>
         <cxf.dropwizard3.version>3.2.6</cxf.dropwizard3.version>
@@ -123,7 +123,7 @@
         <cxf.grizzly.version>5.0.0</cxf.grizzly.version>
         <cxf.hamcrest.version>3.0</cxf.hamcrest.version>
         <cxf.hazelcast.version>5.6.0</cxf.hazelcast.version>
-        <cxf.hibernate.em.version>7.2.3.Final</cxf.hibernate.em.version>
+        <cxf.hibernate.em.version>7.2.4.Final</cxf.hibernate.em.version>
         <cxf.hibernate.validator.version>9.1.0.Final</cxf.hibernate.validator.version>
         <cxf.hsqldb.version>2.7.4</cxf.hsqldb.version>
         <cxf.httpcomponents.asyncclient.version.range>[4.0,4.2)</cxf.httpcomponents.asyncclient.version.range>
@@ -132,7 +132,7 @@
         <cxf.httpcomponents.core.version.range>[4.3,4.5.0)</cxf.httpcomponents.core.version.range>
         <cxf.httpcomponents.core.version>4.4.16</cxf.httpcomponents.core.version>
         <cxf.httpcomponents.client5.version>5.6</cxf.httpcomponents.client5.version>
-        <cxf.httpcomponents.core5.version>5.4</cxf.httpcomponents.core5.version>
+        <cxf.httpcomponents.core5.version>5.4.1</cxf.httpcomponents.core5.version>
         <cxf.jackson.version>3.0.4</cxf.jackson.version>
         <cxf.jackson.databind.version>3.0.4</cxf.jackson.databind.version>
         <cxf.jackson.annotations.version>2.21</cxf.jackson.annotations.version>
@@ -388,7 +388,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
-                    <version>3.2.2</version>
+                    <version>3.6.0</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.apache.cxf.build-utils</groupId>
