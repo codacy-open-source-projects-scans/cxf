@@ -95,7 +95,7 @@
         <cxf.aspectj.version>1.9.25.1</cxf.aspectj.version>
         <cxf.assertj.version>4.0.0-M1</cxf.assertj.version>
         <cxf.atmosphere.version.range>[3.0, 4.0)</cxf.atmosphere.version.range>
-        <cxf.atmosphere.version>3.0.15</cxf.atmosphere.version>
+        <cxf.atmosphere.version>3.1.0</cxf.atmosphere.version>
         <cxf.bcprov.version>1.81</cxf.bcprov.version>
         <cxf.brave.version>6.3.0</cxf.brave.version>
         <cxf.cdi.api.version>4.1.0</cxf.cdi.api.version>
@@ -177,7 +177,7 @@
         <cxf.kerby.version>2.1.1</cxf.kerby.version>
         <cxf.ldapsdk.version>7.0.4</cxf.ldapsdk.version>
         <cxf.littleproxy.version>2.6.0</cxf.littleproxy.version>
-        <cxf.logback.classic.version>1.5.27</cxf.logback.classic.version>
+        <cxf.logback.classic.version>1.5.29</cxf.logback.classic.version>
         <cxf.lucene.version>10.3.2</cxf.lucene.version>
         <cxf.maven.core.version>3.9.12</cxf.maven.core.version>
         <cxf.micrometer.version>1.16.3</cxf.micrometer.version>
