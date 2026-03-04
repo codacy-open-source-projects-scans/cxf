@@ -36,12 +36,12 @@
         <cxf.jetty12.version>12.1.6</cxf.jetty12.version>
         <cxf.netty.version>4.2.10.Final</cxf.netty.version>
         <cxf.httpcomponents.client.version>4.5.14</cxf.httpcomponents.client.version>
-        <cxf.swagger.ui.version>5.31.0</cxf.swagger.ui.version>
+        <cxf.swagger.ui.version>5.31.2</cxf.swagger.ui.version>
         <cxf.tika.version>3.2.3</cxf.tika.version>
         <cxf.tomcat.version>11.0.18</cxf.tomcat.version>
         <cxf.jboss.weld.version>6.0.4.Final</cxf.jboss.weld.version>
         <cxf.gson.version>2.13.2</cxf.gson.version>
-        <cxf.lucene.version>10.3.2</cxf.lucene.version>
+        <cxf.lucene.version>10.4.0</cxf.lucene.version>
         <cxf.olingo.server.version>5.0.0</cxf.olingo.server.version>
         <cxf.aspectj.version>1.9.25.1</cxf.aspectj.version>
         <cxf.brave.version>6.3.0</cxf.brave.version>
@@ -52,7 +52,7 @@
         <cxf.jboss.narayana.version>5.13.1.Final</cxf.jboss.narayana.version>
         <cxf.narayana.spring.boot.version>2.6.7</cxf.narayana.spring.boot.version>
         <cxf.camel.version>4.18.0</cxf.camel.version>
-        <cxf.openfeign.version>13.8</cxf.openfeign.version>
+        <cxf.openfeign.version>13.9</cxf.openfeign.version>
     </properties>
     <dependencies>
         <dependency>
@@ -213,7 +213,7 @@
                 <plugin>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
-                    <version>6.0.0</version>
+                    <version>6.0.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.eclipse.jetty</groupId>
@@ -228,7 +228,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.4</version>
+                    <version>3.5.5</version>
                 </plugin>
                 <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
