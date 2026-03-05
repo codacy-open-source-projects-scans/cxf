@@ -213,7 +213,7 @@
         <cxf.servlet-api.group>jakarta.servlet</cxf.servlet-api.group>
         <cxf.servlet-api.version>6.1.0</cxf.servlet-api.version>
         <cxf.slf4j.version>2.0.17</cxf.slf4j.version>
-        <cxf.snakeyaml.version>2.5</cxf.snakeyaml.version>
+        <cxf.snakeyaml.version>2.6</cxf.snakeyaml.version>
         <cxf.specs.jaxws.api.version>2.3_2</cxf.specs.jaxws.api.version>
         <cxf.spring.boot.version>4.0.3</cxf.spring.boot.version>
         <cxf.spring.ldap.version>4.0.2</cxf.spring.ldap.version>
@@ -227,7 +227,7 @@
         <cxf.tomcat.version>11.0.18</cxf.tomcat.version>
         <cxf.tomitribe.http.signature.version>1.8</cxf.tomitribe.http.signature.version>
         <cxf.undertow.version>2.4.0.Beta2</cxf.undertow.version>
-        <cxf.undertow.ee.version>2.0.0.Beta1</cxf.undertow.ee.version>
+        <cxf.undertow.ee.version>2.0.0.Beta2</cxf.undertow.ee.version>
         <cxf.yasson.version>3.0.4</cxf.yasson.version>
         <!-- the Export-Package is the same as the Maven artifact
              version (with the Final), but we don't want an import package with a version
