@@ -153,7 +153,7 @@
         <cxf.javassist.version>3.29.2-GA</cxf.javassist.version>
         <cxf.jakarta.annotation-api.version>3.0.0</cxf.jakarta.annotation-api.version>
         <cxf.jakarta.ws.rs.version>4.0.0</cxf.jakarta.ws.rs.version>
-        <cxf.jaxb.runtime.version>4.0.6</cxf.jaxb.runtime.version>
+        <cxf.jaxb.runtime.version>4.0.7</cxf.jaxb.runtime.version>
         <cxf.jaxb.version>4.0.5</cxf.jaxb.version>
         <cxf.jaxb.xjc.version>${cxf.jaxb.runtime.version}</cxf.jaxb.xjc.version>
         <cxf.jaxen.version>2.0.0</cxf.jaxen.version>
@@ -218,11 +218,11 @@
         <cxf.spring.boot.version>4.0.3</cxf.spring.boot.version>
         <cxf.spring.ldap.version>4.0.2</cxf.spring.ldap.version>
         <cxf.spring.mock>spring-test</cxf.spring.mock>
-        <cxf.spring.security.version>7.0.3</cxf.spring.security.version>
+        <cxf.spring.security.version>7.0.4</cxf.spring.security.version>
         <cxf.spring.version>7.0.6</cxf.spring.version>
         <cxf.stax-ex.version>1.8.3</cxf.stax-ex.version>
         <cxf.swagger.ui.version>5.32.0</cxf.swagger.ui.version>
-        <cxf.swagger.v3.version>2.2.44</cxf.swagger.v3.version>
+        <cxf.swagger.v3.version>2.2.45</cxf.swagger.v3.version>
         <cxf.tika.version>3.2.3</cxf.tika.version>
         <cxf.tomcat.version>11.0.18</cxf.tomcat.version>
         <cxf.tomitribe.http.signature.version>1.8</cxf.tomitribe.http.signature.version>
