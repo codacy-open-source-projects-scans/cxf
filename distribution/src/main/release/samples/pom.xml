@@ -44,14 +44,14 @@
         <cxf.lucene.version>10.4.0</cxf.lucene.version>
         <cxf.olingo.server.version>5.0.0</cxf.olingo.server.version>
         <cxf.aspectj.version>1.9.25.1</cxf.aspectj.version>
-        <cxf.brave.version>6.3.0</cxf.brave.version>
+        <cxf.brave.version>6.3.1</cxf.brave.version>
         <cxf.zipkin-reporter.version>3.5.3</cxf.zipkin-reporter.version>
         <cxf.zest.version>2.1</cxf.zest.version>
         <cxf.activemq.artemis.version>2.31.0</cxf.activemq.artemis.version>
         <cxf.h2.version>2.4.240</cxf.h2.version>
         <cxf.jboss.narayana.version>5.13.1.Final</cxf.jboss.narayana.version>
         <cxf.narayana.spring.boot.version>2.6.7</cxf.narayana.spring.boot.version>
-        <cxf.camel.version>4.18.0</cxf.camel.version>
+        <cxf.camel.version>4.18.1</cxf.camel.version>
         <cxf.openfeign.version>13.11</cxf.openfeign.version>
     </properties>
     <dependencies>
