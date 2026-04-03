@@ -89,7 +89,7 @@
 
         <!-- please maintain alphabetical order here -->
         <cxf.activemq.artemis.version>2.53.0</cxf.activemq.artemis.version>
-        <cxf.ahc.version>3.0.7</cxf.ahc.version>
+        <cxf.ahc.version>3.0.8</cxf.ahc.version>
         <cxf.arquillian.version>1.10.1.Final</cxf.arquillian.version>
         <cxf.arquillian.weld.container.version>4.0.0.Final</cxf.arquillian.weld.container.version>
         <cxf.aspectj.version>1.9.25.1</cxf.aspectj.version>
@@ -133,8 +133,8 @@
         <cxf.httpcomponents.core.version>4.4.16</cxf.httpcomponents.core.version>
         <cxf.httpcomponents.client5.version>5.6</cxf.httpcomponents.client5.version>
         <cxf.httpcomponents.core5.version>5.4.2</cxf.httpcomponents.core5.version>
-        <cxf.jackson.version>3.1.0</cxf.jackson.version>
-        <cxf.jackson.databind.version>3.1.0</cxf.jackson.databind.version>
+        <cxf.jackson.version>3.1.1</cxf.jackson.version>
+        <cxf.jackson.databind.version>3.1.1</cxf.jackson.databind.version>
         <cxf.jackson.annotations.version>2.21</cxf.jackson.annotations.version>
         <cxf.jacorb.version>3.9</cxf.jacorb.version>
         <cxf.jaeger.version>1.8.1</cxf.jaeger.version>
@@ -201,7 +201,7 @@
         <cxf.parsson.version>1.1.7</cxf.parsson.version>
         <cxf.persistence-api.version>3.2.0</cxf.persistence-api.version>
         <cxf.plexus-archiver.version>4.11.0</cxf.plexus-archiver.version>
-        <cxf.plexus-utils.version>4.0.2</cxf.plexus-utils.version>
+        <cxf.plexus-utils.version>4.0.3</cxf.plexus-utils.version>
         <cxf.reactivestreams.version>1.0.4</cxf.reactivestreams.version>
         <cxf.reactor.version>3.8.4</cxf.reactor.version>
         <cxf.rhino.version>1.9.1</cxf.rhino.version>
@@ -436,7 +436,7 @@
                         <dependency>
                             <groupId>net.sourceforge.pmd</groupId>
                             <artifactId>pmd-core</artifactId>
-                            <version>7.22.0</version>
+                            <version>7.23.0</version>
                         </dependency>
                         <dependency>
                             <groupId>net.sourceforge.pmd</groupId>
