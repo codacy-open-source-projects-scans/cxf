@@ -89,7 +89,7 @@
 
         <!-- please maintain alphabetical order here -->
         <cxf.activemq.artemis.version>2.53.0</cxf.activemq.artemis.version>
-        <cxf.ahc.version>3.0.8</cxf.ahc.version>
+        <cxf.ahc.version>3.0.9</cxf.ahc.version>
         <cxf.arquillian.version>1.10.1.Final</cxf.arquillian.version>
         <cxf.arquillian.weld.container.version>4.0.0.Final</cxf.arquillian.weld.container.version>
         <cxf.aspectj.version>1.9.25.1</cxf.aspectj.version>
@@ -176,12 +176,12 @@
         <cxf.junit6.version>6.0.3</cxf.junit6.version>
         <cxf.kerby.version>2.1.1</cxf.kerby.version>
         <cxf.ldapsdk.version>7.0.4</cxf.ldapsdk.version>
-        <cxf.littleproxy.version>2.6.0</cxf.littleproxy.version>
+        <cxf.littleproxy.version>2.7.0</cxf.littleproxy.version>
         <cxf.logback.classic.version>1.5.32</cxf.logback.classic.version>
         <cxf.lucene.version>10.4.0</cxf.lucene.version>
         <cxf.maven.core.version>3.9.14</cxf.maven.core.version>
-        <cxf.micrometer.version>1.16.4</cxf.micrometer.version>
-        <cxf.micrometer-tracing.version>1.6.4</cxf.micrometer-tracing.version>
+        <cxf.micrometer.version>1.16.5</cxf.micrometer.version>
+        <cxf.micrometer-tracing.version>1.6.5</cxf.micrometer-tracing.version>
         <cxf.microprofile.config.version>3.1</cxf.microprofile.config.version>
         <cxf.microprofile.rest.client.version>4.0</cxf.microprofile.rest.client.version>
         <cxf.microprofile.openapi.version>4.1.1</cxf.microprofile.openapi.version>
@@ -194,7 +194,7 @@
         <cxf.netty.tcnative.version>2.0.69.Final</cxf.netty.tcnative.version>
         <cxf.olingo.version>2.0.13</cxf.olingo.version>
         <cxf.openjpa.version>4.1.1</cxf.openjpa.version>
-        <cxf.opentelemetry.version>1.60.1</cxf.opentelemetry.version>
+        <cxf.opentelemetry.version>1.61.0</cxf.opentelemetry.version>
         <cxf.opentelemetry.semconv.version>1.40.0</cxf.opentelemetry.semconv.version>
         <cxf.opentracing.version>0.33.0</cxf.opentracing.version>
         <cxf.openwebbeans.version>4.0.3</cxf.openwebbeans.version>
@@ -222,7 +222,7 @@
         <cxf.spring.version>7.0.6</cxf.spring.version>
         <cxf.stax-ex.version>1.8.3</cxf.stax-ex.version>
         <cxf.swagger.ui.version>5.32.1</cxf.swagger.ui.version>
-        <cxf.swagger.v3.version>2.2.46</cxf.swagger.v3.version>
+        <cxf.swagger.v3.version>2.2.47</cxf.swagger.v3.version>
         <cxf.tika.version>3.3.0</cxf.tika.version>
         <cxf.tomcat.version>11.0.21</cxf.tomcat.version>
         <cxf.tomitribe.http.signature.version>1.8</cxf.tomitribe.http.signature.version>
