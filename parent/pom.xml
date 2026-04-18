@@ -133,8 +133,8 @@
         <cxf.httpcomponents.core.version>4.4.16</cxf.httpcomponents.core.version>
         <cxf.httpcomponents.client5.version>5.6</cxf.httpcomponents.client5.version>
         <cxf.httpcomponents.core5.version>5.4.2</cxf.httpcomponents.core5.version>
-        <cxf.jackson.version>3.1.1</cxf.jackson.version>
-        <cxf.jackson.databind.version>3.1.1</cxf.jackson.databind.version>
+        <cxf.jackson.version>3.1.2</cxf.jackson.version>
+        <cxf.jackson.databind.version>3.1.2</cxf.jackson.databind.version>
         <cxf.jackson.annotations.version>2.21</cxf.jackson.annotations.version>
         <cxf.jacorb.version>3.9</cxf.jacorb.version>
         <cxf.jaeger.version>1.8.1</cxf.jaeger.version>
@@ -216,12 +216,12 @@
         <cxf.snakeyaml.version>2.6</cxf.snakeyaml.version>
         <cxf.specs.jaxws.api.version>2.3_2</cxf.specs.jaxws.api.version>
         <cxf.spring.boot.version>4.0.5</cxf.spring.boot.version>
-        <cxf.spring.ldap.version>4.0.2</cxf.spring.ldap.version>
+        <cxf.spring.ldap.version>4.0.3</cxf.spring.ldap.version>
         <cxf.spring.mock>spring-test</cxf.spring.mock>
         <cxf.spring.security.version>7.0.4</cxf.spring.security.version>
-        <cxf.spring.version>7.0.6</cxf.spring.version>
+        <cxf.spring.version>7.0.7</cxf.spring.version>
         <cxf.stax-ex.version>1.8.3</cxf.stax-ex.version>
-        <cxf.swagger.ui.version>5.32.2</cxf.swagger.ui.version>
+        <cxf.swagger.ui.version>5.32.4</cxf.swagger.ui.version>
         <cxf.swagger.v3.version>2.2.47</cxf.swagger.v3.version>
         <cxf.tika.version>3.3.0</cxf.tika.version>
         <cxf.tomcat.version>11.0.21</cxf.tomcat.version>
