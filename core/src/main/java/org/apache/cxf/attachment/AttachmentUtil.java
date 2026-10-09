@@ -63,6 +63,7 @@ import org.apache.cxf.io.CachedOutputStream;
 import org.apache.cxf.message.Attachment;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageUtils;
+import org.apache.cxf.resource.URIResolver;
 
 public final class AttachmentUtil {
     // The default values for {@link AttachmentDataSource} content type in case when
@@ -214,24 +215,25 @@ public final class AttachmentUtil {
         }
 
         Object maxSize = message.getContextualProperty(AttachmentDeserializer.ATTACHMENT_MAX_SIZE);
-        if (maxSize != null) {
-            if (maxSize instanceof Number) {
-                long size = ((Number) maxSize).longValue();
-                if (size >= 0) {
-                    bos.setMaxSize(size);
-                } else {
-                    LOG.warning("Max size value overflowed long. Do not set max size!");
-                }
-            } else if (maxSize instanceof String) {
-                try {
-                    bos.setMaxSize(Long.parseLong((String) maxSize));
-                } catch (NumberFormatException e) {
-                    throw new IOException("Provided threshold String is not a number", e);
-                }
+        if (maxSize == null) {
+            maxSize = AttachmentDeserializer.DEFAULT_ATTACHMENT_MAX_SIZE;
+        }
+        if (maxSize instanceof Number) {
+            long size = ((Number) maxSize).longValue();
+            if (size >= 0) {
+                bos.setMaxSize(size);
             } else {
-                throw new IOException("The value set as " + AttachmentDeserializer.ATTACHMENT_MAX_SIZE
-                        + " should be either an instance of Number or String");
+                LOG.warning("The max size value is set to unlimited.");
             }
+        } else if (maxSize instanceof String) {
+            try {
+                bos.setMaxSize(Long.parseLong((String) maxSize));
+            } catch (NumberFormatException e) {
+                throw new IOException("Provided max size String is not a number", e);
+            }
+        } else {
+            throw new IOException("The value set as " + AttachmentDeserializer.ATTACHMENT_MAX_SIZE
+                    + " should be either an instance of Number or String");
         }
     }
 
@@ -592,11 +594,15 @@ public final class AttachmentUtil {
                     final boolean followUrls = Boolean.valueOf(SystemPropertyAction
                         .getProperty(ATTACHMENT_XOP_FOLLOW_URLS_PROPERTY, "false"));
                     if (followUrls) {
-                        return new URLDataSource(new URL(contentId));
+                        final URL remoteUrl = new URL(contentId);
+                        URIResolver.checkAllowedScheme(remoteUrl);
+                        return new URLDataSource(remoteUrl);
                     } else {
                         return loadDataSource(contentId, atts);
                     }
                 } catch (MalformedURLException e) {
+                    throw new Fault(e);
+                } catch (IOException e) {
                     throw new Fault(e);
                 }
             }

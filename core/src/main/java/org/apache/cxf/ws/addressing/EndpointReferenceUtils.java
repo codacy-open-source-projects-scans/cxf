@@ -27,6 +27,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,6 +40,7 @@ import java.util.logging.Logger;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
@@ -45,12 +48,15 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBElement;
@@ -64,10 +70,10 @@ import org.apache.cxf.common.xmlschema.LSInputImpl;
 import org.apache.cxf.endpoint.EndpointResolverRegistry;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.endpoint.ServerRegistry;
-import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.helpers.LoadingByteArrayOutputStream;
 import org.apache.cxf.resource.ExtendedURIResolver;
 import org.apache.cxf.resource.ResourceManager;
+import org.apache.cxf.resource.URIResolver;
 import org.apache.cxf.service.model.SchemaInfo;
 import org.apache.cxf.service.model.ServiceInfo;
 import org.apache.cxf.staxutils.StaxUtils;
@@ -106,6 +112,11 @@ public final class EndpointReferenceUtils {
 
         public LSInput resolveResource(String type, String namespaceURI, String publicId,
                                        String systemId, String baseURI) {
+            if (!XMLConstants.W3C_XML_SCHEMA_NS_URI.equals(type)) {
+                // Leave DTDs and external entities to the SchemaFactory, so that the
+                // ACCESS_EXTERNAL_DTD restriction configured on it is enforced
+                return null;
+            }
 
             String newId = systemId;
             if (baseURI != null && systemId != null) {  //add additional systemId null check
@@ -197,13 +208,33 @@ public final class EndpointReferenceUtils {
                     systemId = publicId;
                 }
                 if (systemId != null) {
-                    InputSource source = resolver.resolve(systemId, baseURI);
+                    // Run inside doPrivileged so that sm.checkPermission() calls
+                    // inside the resolver chain (SecurityActions.fileExists) stop
+                    // at this boundary and check only CXF's own permissions rather
+                    // than walking up through the JAXP schema-validator frames that
+                    // lack CXF-internal permissions.
+                    final String sid = systemId;
+                    final String buri = baseURI;
+                    InputSource source = AccessController.doPrivileged(
+                        (PrivilegedAction<InputSource>) () -> resolver.resolve(sid, buri));
                     if (source != null) {
-                        impl = new LSInputImpl();
-                        impl.setByteStream(source.getByteStream());
-                        impl.setSystemId(source.getSystemId());
-                        impl.setPublicId(source.getPublicId());
-                        return impl;
+                        // The external access restrictions set on the SchemaFactory do not apply to
+                        // inputs returned from this resolver, so re-parse the resolved document with
+                        // the secure StAX parser to strip any DTD before it reaches the SchemaFactory.
+                        byte[] bytes = null;
+                        try (InputStream ins = source.getByteStream()) {
+                            if (ins != null) {
+                                bytes = toSecureBytes(ins, source.getSystemId());
+                            }
+                        } catch (Exception e) {
+                            LOG.log(Level.WARNING, "Could not parse Schema for " + systemId, e);
+                            return null;
+                        }
+                        if (bytes != null) {
+                            impl = createInput(source.getSystemId(), bytes);
+                            impl.setPublicId(source.getPublicId());
+                            return impl;
+                        }
                     }
                 }
                 LOG.warning("Could not resolve Schema for " + systemId);
@@ -488,6 +519,25 @@ public final class EndpointReferenceUtils {
         Schema schema = serviceInfo.getProperty(Schema.class.getName(), Schema.class);
         if (schema == null) {
             SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            try {
+                factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
+            } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+                LOG.log(Level.WARNING, "The property '" + XMLConstants.FEATURE_SECURE_PROCESSING
+                    + "' is not supported.");
+            }
+
+            try {
+                factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+                LOG.log(Level.WARNING, "The property '" + XMLConstants.ACCESS_EXTERNAL_DTD + "' is not supported.");
+            }
+
+            try {
+                factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+                LOG.log(Level.WARNING, "The property '" + XMLConstants.ACCESS_EXTERNAL_SCHEMA + "' is not supported.");
+            }
+
             Map<String, byte[]> schemaSourcesMap = new LinkedHashMap<>();
             Map<String, Source> schemaSourcesMap2 = new LinkedHashMap<>();
 
@@ -519,20 +569,19 @@ public final class EndpointReferenceUtils {
                         && !schemaSourcesMap.containsKey(sch.getSourceURI() + ':'
                                                          + sch.getTargetNamespace())) {
 
-                        InputStream ins = null;
-                        try {
-                            URL url = new URL(sch.getSourceURI());
-                            ins = url.openStream();
+                        LoadingByteArrayOutputStream out = new LoadingByteArrayOutputStream();
+                        try (URIResolver resolver = new URIResolver(sch.getSourceURI())) {
+                            if (resolver.getInputStream() == null) {
+                                sch.write(out);
+                            } else {
+                                // Re-parse securely rather than copying the raw bytes, so that any
+                                // DTD in the fetched document never reaches the SchemaFactory
+                                out.write(toSecureBytes(resolver.getInputStream(), sch.getSourceURI()));
+                            }
                         } catch (Exception e) {
                             //ignore, we'll just use what we have.  (though
                             //bugs in XmlSchema could make this less useful)
-                        }
-
-                        LoadingByteArrayOutputStream out = new LoadingByteArrayOutputStream();
-                        if (ins == null) {
                             sch.write(out);
-                        } else {
-                            IOUtils.copyAndCloseInput(ins, out);
                         }
 
                         schemaSourcesMap.put(sch.getSourceURI() + ':'
@@ -563,6 +612,25 @@ public final class EndpointReferenceUtils {
             serviceInfo.setProperty(Schema.class.getName(), schema);
         }
         return schema;
+    }
+
+    /**
+     * Parse the document with the secure StAX parser (DTDs and external entities disabled) and
+     * re-serialize the document element, dropping any DOCTYPE declaration.
+     */
+    private static byte[] toSecureBytes(InputStream ins, String systemId) throws XMLStreamException {
+        InputSource inputSource = new InputSource(ins);
+        inputSource.setSystemId(systemId);
+        Document doc = StaxUtils.read(inputSource);
+        LoadingByteArrayOutputStream out = new LoadingByteArrayOutputStream();
+        XMLStreamWriter writer = StaxUtils.createXMLStreamWriter(out);
+        try {
+            StaxUtils.copy(doc.getDocumentElement(), writer);
+            writer.flush();
+        } finally {
+            StaxUtils.close(writer);
+        }
+        return out.toByteArray();
     }
 
     public static Schema getSchema(ServiceInfo serviceInfo) {

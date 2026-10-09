@@ -18,8 +18,14 @@
  */
 package org.apache.cxf.rs.security.oauth2.services;
 
+import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+
+import javax.security.auth.x500.X500Principal;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -37,6 +43,7 @@ import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriBuilder;
 import org.apache.cxf.common.util.Base64UrlUtility;
+import org.apache.cxf.common.util.Base64Utility;
 import org.apache.cxf.common.util.StringUtils;
 import org.apache.cxf.jaxrs.ext.MessageContext;
 import org.apache.cxf.jaxrs.utils.ExceptionUtils;
@@ -44,22 +51,30 @@ import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.rs.security.oauth2.common.Client;
 import org.apache.cxf.rs.security.oauth2.common.OAuthError;
 import org.apache.cxf.rs.security.oauth2.common.UserSubject;
+import org.apache.cxf.rs.security.oauth2.provider.AbstractOAuthDataProvider;
 import org.apache.cxf.rs.security.oauth2.provider.ClientRegistrationProvider;
 import org.apache.cxf.rs.security.oauth2.utils.AuthorizationUtils;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
 import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
 import org.apache.cxf.rt.security.crypto.CryptoUtils;
+import org.apache.cxf.security.transport.TLSSessionInfo;
 
 @Path("register")
 public class DynamicRegistrationService {
-    private static final String DEFAULT_APPLICATION_TYPE = "web";
+    private static final List<String> LOOPBACK_HOSTS = List.of("localhost", "127.0.0.1", "[::1]");
+    private static final String WEB_APPLICATION_TYPE = "web";
+    private static final String NATIVE_APPLICATION_TYPE = "native";
+    private static final String INVALID_CLIENT_METADATA = "invalid_client_metadata";
+    private static final String DEFAULT_APPLICATION_TYPE = WEB_APPLICATION_TYPE;
     private static final Integer DEFAULT_CLIENT_ID_SIZE = 10;
     private ClientRegistrationProvider clientProvider;
     private String initialAccessToken;
     private int clientIdSizeInBytes = DEFAULT_CLIENT_ID_SIZE;
     private MessageContext mc;
     private boolean supportRegistrationAccessTokens = true;
+    private boolean enforceTlsClientAuthCertificateBinding = true;
     private String userRole;
+    private List<String> allowedClientScopes;
 
     @POST
     @Consumes("application/json")
@@ -76,7 +91,7 @@ public class DynamicRegistrationService {
     protected void checkInitialAuthentication() {
         if (initialAccessToken != null) {
             String accessToken = getRequestAccessToken();
-            if (!initialAccessToken.equals(accessToken)) {
+            if (!OAuthUtils.compareTokens(initialAccessToken, accessToken)) {
                 throw ExceptionUtils.toNotAuthorizedException(null, null);
             }
         } else {
@@ -105,7 +120,7 @@ public class DynamicRegistrationService {
     protected void checkRegistrationAccessToken(Client c, String accessToken) {
         String regAccessToken = c.getProperties().get(ClientRegistrationResponse.REG_ACCESS_TOKEN);
 
-        if (regAccessToken == null || !regAccessToken.equals(accessToken)) {
+        if (!OAuthUtils.compareTokens(regAccessToken, accessToken)) {
             throw ExceptionUtils.toNotAuthorizedException(null, null);
         }
     }
@@ -177,7 +192,7 @@ public class DynamicRegistrationService {
         ClientRegistration reg = new ClientRegistration();
         reg.setClientName(c.getApplicationName());
         reg.setGrantTypes(c.getAllowedGrantTypes());
-        reg.setApplicationType(c.isConfidential() ? "web" : "native");
+        reg.setApplicationType(c.isConfidential() ? WEB_APPLICATION_TYPE : NATIVE_APPLICATION_TYPE);
         if (!c.getRedirectUris().isEmpty()) {
             reg.setRedirectUris(c.getRedirectUris());
         }
@@ -256,6 +271,9 @@ public class DynamicRegistrationService {
         String appType = request.getApplicationType();
         if (appType == null) {
             appType = DEFAULT_APPLICATION_TYPE;
+        } else if (!WEB_APPLICATION_TYPE.equalsIgnoreCase(appType)
+            && !NATIVE_APPLICATION_TYPE.equalsIgnoreCase(appType)) {
+            reportInvalidRequestError(new OAuthError(INVALID_CLIENT_METADATA, "Unsupported application type"));
         }
         boolean isConfidential = DEFAULT_APPLICATION_TYPE.equals(appType)
             && (passwordRequired
@@ -270,6 +288,8 @@ public class DynamicRegistrationService {
 
         newClient.setTokenEndpointAuthMethod(tokenEndpointAuthMethod);
         if (OAuthConstants.TOKEN_ENDPOINT_AUTH_TLS.equals(tokenEndpointAuthMethod)) {
+            X509Certificate cert = enforceTlsClientAuthCertificateBinding
+                ? validateTlsClientAuthCertificateBinding(request) : getTlsClientCertificate();
             String subjectDn = (String)request.getProperty(OAuthConstants.TLS_CLIENT_AUTH_SUBJECT_DN);
             if (subjectDn != null) {
                 newClient.getProperties().put(OAuthConstants.TLS_CLIENT_AUTH_SUBJECT_DN, subjectDn);
@@ -277,6 +297,15 @@ public class DynamicRegistrationService {
             String issuerDn = (String)request.getProperty(OAuthConstants.TLS_CLIENT_AUTH_ISSUER_DN);
             if (issuerDn != null) {
                 newClient.getProperties().put(OAuthConstants.TLS_CLIENT_AUTH_ISSUER_DN, issuerDn);
+            }
+            if (cert != null) {
+                try {
+                    newClient.getApplicationCertificates().add(Base64Utility.encode(cert.getEncoded()));
+                } catch (Exception ex) {
+                    OAuthError error =
+                        new OAuthError(INVALID_CLIENT_METADATA, "Unable to register TLS client certificate");
+                    reportInvalidRequestError(error);
+                }
             }
         }
         // Client Registration Time
@@ -292,6 +321,44 @@ public class DynamicRegistrationService {
 
         newClient.setRegisteredDynamically(true);
         return newClient;
+    }
+
+    protected X509Certificate getTlsClientCertificate() {
+        TLSSessionInfo tlsSessionInfo = (TLSSessionInfo)mc.get(TLSSessionInfo.class.getName());
+        return tlsSessionInfo == null ? null : OAuthUtils.getRootTLSCertificate(tlsSessionInfo);
+    }
+
+    protected X509Certificate validateTlsClientAuthCertificateBinding(ClientRegistration request) {
+        X509Certificate cert = getTlsClientCertificate();
+        if (cert == null) {
+            OAuthError error =
+                new OAuthError(INVALID_CLIENT_METADATA, "TLS client certificate is required");
+            reportInvalidRequestError(error);
+        }
+
+        String subjectDn = (String)request.getProperty(OAuthConstants.TLS_CLIENT_AUTH_SUBJECT_DN);
+        if (subjectDn != null
+            && !isSameDistinguishedName(subjectDn, OAuthUtils.getSubjectDnFromTLSCertificates(cert))) {
+            OAuthError error =
+                new OAuthError(INVALID_CLIENT_METADATA, "Invalid tls_client_auth_subject_dn metadata");
+            reportInvalidRequestError(error);
+        }
+        String issuerDn = (String)request.getProperty(OAuthConstants.TLS_CLIENT_AUTH_ISSUER_DN);
+        if (issuerDn != null
+            && !isSameDistinguishedName(issuerDn, OAuthUtils.getIssuerDnFromTLSCertificates(cert))) {
+            OAuthError error =
+                new OAuthError(INVALID_CLIENT_METADATA, "Invalid tls_client_auth_root_dn metadata");
+            reportInvalidRequestError(error);
+        }
+        return cert;
+    }
+
+    private boolean isSameDistinguishedName(String expectedDn, String actualDn) {
+        try {
+            return new X500Principal(expectedDn).equals(new X500Principal(actualDn));
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     protected void fromClientRegistrationToClient(ClientRegistration request, Client client) {
@@ -328,7 +395,13 @@ public class DynamicRegistrationService {
         // Client Scopes
         String scope = request.getScope();
         if (!StringUtils.isEmpty(scope)) {
-            client.setRegisteredScopes(OAuthUtils.parseScope(scope));
+            List<String> requestedScopes = OAuthUtils.parseScope(scope);
+            validateClientScopes(requestedScopes);
+            client.setRegisteredScopes(requestedScopes);
+        } else if (allowedClientScopes != null && client.getRegisteredScopes().isEmpty()) {
+            // An empty list of registered scopes allows any scope to be requested later on,
+            // so restrict the client to the configured scopes instead
+            client.setRegisteredScopes(new ArrayList<>(allowedClientScopes));
         }
         // Client Application URI
         String clientUri = request.getClientUri();
@@ -360,12 +433,51 @@ public class DynamicRegistrationService {
                 || OAuthConstants.TOKEN_ENDPOINT_AUTH_POST.equals(tokenEndpointAuthMethod));
     }
 
+    @SuppressWarnings("PMD.CollapsibleIfStatements")
     protected void validateRequestUri(String uri, String appType, List<String> grantTypes) {
+        if (uri == null || uri.isBlank()) {
+            reportInvalidRequestError(new OAuthError(INVALID_CLIENT_METADATA, "Empty redirect URI is not supported"));
+        }
+
         // Web Clients using the OAuth Implicit Grant Type MUST only register URLs using the https scheme
         // as redirect_uris; they MUST NOT use localhost as the hostname. Native Clients MUST only register
-        // redirect_uris using custom URI schemes or URLs using the http: scheme with localhost as the hostname.
+        // redirect_uris using custom URI schemes or loopback URLs using the http scheme; loopback URLs use 
+        // localhost or the IP loopback literals 127.0.0.1 or [::1] as the hostname.
         // Authorization Servers MAY place additional constraints on Native Clients. Authorization Servers MAY
         // reject Redirection URI values using the http scheme, other than the localhost case for Native Clients
+
+        final URI parsedUri = URI.create(uri);
+        if (parsedUri.getHost() == null || parsedUri.getScheme() == null) {
+            reportInvalidRequestError(new OAuthError(INVALID_CLIENT_METADATA, "Unsupported redirect URI scheme/host"));
+        }
+        final String host = parsedUri.getHost().toLowerCase();
+        final String scheme = parsedUri.getScheme().toLowerCase();
+        if (!scheme.equals("http") && !scheme.equals("https")) {
+            reportInvalidRequestError(new OAuthError(INVALID_CLIENT_METADATA,
+                "Redirect URI scheme is not allowed: " + scheme
+                    + ". Allowed schemes: http, https"));
+        }
+
+        // Kind of the application. The default, if omitted, is web. The defined values are native or web.
+        if (appType == null || appType.isBlank() || appType.equalsIgnoreCase(WEB_APPLICATION_TYPE)) {
+            if (grantTypes.contains(OAuthConstants.IMPLICIT_GRANT)) {
+                if (!"https".equals(scheme)) {
+                    reportInvalidRequestError(new OAuthError(INVALID_CLIENT_METADATA,
+                        "Unsupported redirect URI scheme"));
+                } else if ("localhost".equals(host)) {
+                    reportInvalidRequestError(new OAuthError(INVALID_CLIENT_METADATA,
+                        "Unsupported redirect URI hostname"));
+                }
+            }
+        } else if (appType.equalsIgnoreCase(NATIVE_APPLICATION_TYPE)) {
+            if ("http".equals(scheme) && !LOOPBACK_HOSTS.contains(host)) {
+                reportInvalidRequestError(new OAuthError(INVALID_CLIENT_METADATA,
+                    "Unsupported redirect URI hostname for scheme"));
+            }
+        } else {
+            reportInvalidRequestError(new OAuthError(INVALID_CLIENT_METADATA,
+                "Unsupported application type"));
+        }
     }
 
     public void setClientProvider(ClientRegistrationProvider clientProvider) {
@@ -413,8 +525,34 @@ public class DynamicRegistrationService {
         this.supportRegistrationAccessTokens = supportRegistrationAccessTokens;
     }
 
+    public void setEnforceTlsClientAuthCertificateBinding(boolean enforceTlsClientAuthCertificateBinding) {
+        this.enforceTlsClientAuthCertificateBinding = enforceTlsClientAuthCertificateBinding;
+    }
+
     public void setUserRole(String userRole) {
         this.userRole = userRole;
+    }
+
+    public void setAllowedClientScopes(List<String> allowedClientScopes) {
+        this.allowedClientScopes = allowedClientScopes;
+    }
+
+    protected void validateClientScopes(List<String> requestedScopes) {
+        if (requestedScopes == null || requestedScopes.isEmpty()) {
+            return;
+        }
+
+        List<String> allowedScopes = allowedClientScopes;
+        if (allowedScopes == null && clientProvider instanceof AbstractOAuthDataProvider) {
+            allowedScopes = new ArrayList<>(
+                ((AbstractOAuthDataProvider)clientProvider).getPermissionMap().keySet());
+        }
+
+        if (allowedScopes != null && !new HashSet<>(allowedScopes).containsAll(requestedScopes)) {
+            OAuthError error =
+                new OAuthError(INVALID_CLIENT_METADATA, "Invalid scope metadata");
+            reportInvalidRequestError(error);
+        }
     }
 
     private void reportInvalidRequestError(OAuthError entity) {

@@ -39,6 +39,7 @@ import org.apache.cxf.jaxrs.ext.MessageContextImpl;
 import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.apache.cxf.jaxrs.utils.FormUtils;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
+import org.apache.cxf.message.Message;
 import org.apache.cxf.rs.security.jose.jwt.JwtException;
 import org.apache.cxf.rs.security.jose.jwt.JwtUtils;
 import org.apache.cxf.rs.security.oauth2.client.ClientTokenContext;
@@ -54,6 +55,7 @@ public class OidcRpAuthenticationFilter implements ContainerRequestFilter {
     private String redirectUri;
     private String roleClaim;
     private boolean addRequestUriAsRedirectQuery;
+    private boolean requireIdTokenExpiry = true;
 
     public void filter(ContainerRequestContext rc) {
         if (checkSecurityContext(rc)) {
@@ -86,9 +88,13 @@ public class OidcRpAuthenticationFilter implements ContainerRequestFilter {
             return false;
         }
         IdToken idToken = tokenContext.getIdToken();
+        if (idToken == null) {
+            return false;
+        }
         try {
-            // If ID token has expired then the context is no longer valid
-            JwtUtils.validateJwtExpiry(idToken, 0, idToken.getExpiryTime() != null);
+            // If ID token has expired then the context is no longer valid.
+            // OIDC Core mandates "exp" in ID Tokens, so it is required by default.
+            JwtUtils.validateJwtExpiry(idToken, 0, requireIdTokenExpiry);
         } catch (JwtException ex) {
             stateManager.removeClientTokenContext(new MessageContextImpl(JAXRSUtils.getCurrentMessage()));
             return false;
@@ -109,13 +115,37 @@ public class OidcRpAuthenticationFilter implements ContainerRequestFilter {
         MultivaluedMap<String, String> requestState = new MetadataMap<>();
         requestState.putAll(rc.getUriInfo().getQueryParameters(true));
         if (MediaType.APPLICATION_FORM_URLENCODED_TYPE.isCompatible(rc.getMediaType())) {
-            String body = FormUtils.readBody(rc.getEntityStream(), StandardCharsets.UTF_8.name());
-            FormUtils.populateMapFromString(requestState, JAXRSUtils.getCurrentMessage(), body,
+            final Message currentMessage = JAXRSUtils.getCurrentMessage();
+            String body = FormUtils.readBody(rc.getEntityStream(), StandardCharsets.UTF_8.name(),
+                    FormUtils.getMaxFormParamsSize(currentMessage));
+            FormUtils.populateMapFromString(requestState, currentMessage, body,
                                             StandardCharsets.UTF_8.name(), true);
             rc.setEntityStream(new ByteArrayInputStream(StringUtils.toBytesUTF8(body)));
 
         }
+        // The "state" carried here is read back by the sign-in completion service and returned
+        // as a redirect Location, so a caller-supplied value collides with the redirect query
+        // the filter itself writes. Anything that is not within this application's own origin is
+        // dropped, otherwise completion would become an open redirect.
+        String location = requestState.getFirst("state");
+        if (location != null && !isSameOrigin(rc, location)) {
+            requestState.remove("state");
+        }
         return requestState;
+    }
+    private boolean isSameOrigin(ContainerRequestContext rc, String location) {
+        final URI uri;
+        try {
+            uri = URI.create(location);
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
+        if (uri.getScheme() == null && uri.getAuthority() == null) {
+            // a path-only reference is resolved by the browser against the current request
+            return true;
+        }
+        URI base = rc.getUriInfo().getAbsolutePath();
+        return OidcRpAuthenticationUtils.isSameOrigin(base, uri);
     }
     public void setRedirectUri(String redirectUri) {
         this.redirectUri = redirectUri;
@@ -130,5 +160,15 @@ public class OidcRpAuthenticationFilter implements ContainerRequestFilter {
 
     public void setAddRequestUriAsRedirectQuery(boolean addRequestUriAsRedirectQuery) {
         this.addRequestUriAsRedirectQuery = addRequestUriAsRedirectQuery;
+    }
+
+    /**
+     * Whether the stored ID token must carry an expiry ("exp") claim for the
+     * session context to keep being revalidated. Default is true. Disabling
+     * this re-opens never-expiring sessions for exp-less ID tokens - only do
+     * so if another mechanism bounds the session lifetime.
+     */
+    public void setRequireIdTokenExpiry(boolean requireIdTokenExpiry) {
+        this.requireIdTokenExpiry = requireIdTokenExpiry;
     }
 }

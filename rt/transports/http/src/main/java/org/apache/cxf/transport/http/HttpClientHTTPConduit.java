@@ -433,10 +433,14 @@ public class HttpClientHTTPConduit extends URLConnectionHTTPConduit {
                         if (clientParameters.getSecureSocketProtocol() != null) {
                             String protocol = clientParameters.getSecureSocketProtocol();
                             SSLParameters params = new SSLParameters(cipherSuites, new String[] {protocol});
+                            org.apache.cxf.transport.https.SSLUtils.applyNamedGroups(
+                                params, clientParameters.getNamedGroups());
                             cb.sslParameters(params);
                         } else {
                             final SSLParameters params = new SSLParameters(cipherSuites,
                                 TLSClientParameters.getPreferredClientProtocols());
+                            org.apache.cxf.transport.https.SSLUtils.applyNamedGroups(
+                                params, clientParameters.getNamedGroups());
                             cb.sslParameters(params);
                         }
                     }
@@ -1060,6 +1064,13 @@ public class HttpClientHTTPConduit extends URLConnectionHTTPConduit {
                 future = cl.sendAsync(request, handler);
             }
             future.exceptionally(ex -> {
+                // Record the failure on the message so the close() invoked below
+                // does not treat this as an un-sent request and resend it: the
+                // shared WrappedOutputStream#close() already skips
+                // handleHeadersTrustCaching() once outMessage carries an Exception
+                // (CXF-9250).
+                outMessage.setContent(Exception.class,
+                        ex instanceof Exception ? (Exception) ex : new IOException(ex));
                 if (pout != null) {
                     synchronized (pout) {
                         pout.notifyAll();

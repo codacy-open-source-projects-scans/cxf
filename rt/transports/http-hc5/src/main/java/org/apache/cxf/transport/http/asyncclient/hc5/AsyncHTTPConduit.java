@@ -78,9 +78,12 @@ import org.apache.hc.client5.http.auth.Credentials;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.client5.http.impl.auth.BasicAuthCache;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
+import org.apache.hc.client5.http.impl.auth.BasicScheme;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+import org.apache.hc.client5.http.ssl.HostnameVerificationPolicy;
 import org.apache.hc.core5.concurrent.BasicFuture;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.Header;
@@ -553,6 +556,11 @@ public class AsyncHTTPConduit extends HttpClientHTTPConduit {
             };
 
             ctx.setCredentialsProvider(credsProvider);
+            if (proxyAuthorizationPolicy != null && proxyAuthorizationPolicy.getUserName() != null) {
+                final BasicAuthCache cache = new BasicAuthCache();
+                cache.put(entity.getConfig().getProxy(), new BasicScheme());
+                ctx.setAuthCache(cache);
+            }
 
             TlsStrategy tlsStrategy = null;
             if ("https".equals(url.getScheme())) {
@@ -584,7 +592,7 @@ public class AsyncHTTPConduit extends HttpClientHTTPConduit {
                         sslContext.getSupportedSSLParameters().getProtocols());
 
                     tlsStrategy = new DefaultClientTlsStrategy(sslcontext, protocols,
-                        cipherSuites, SSLBufferMode.STATIC, verifier);
+                        cipherSuites, SSLBufferMode.STATIC, HostnameVerificationPolicy.CLIENT, verifier);
                 } catch (final GeneralSecurityException e) {
                     LOG.warning(e.getMessage());
                 }
@@ -885,7 +893,7 @@ public class AsyncHTTPConduit extends HttpClientHTTPConduit {
             sslURL = null;
 
             //reset the buffers
-            int bufSize = csPolicy.getChunkLength() > 0 ? csPolicy.getChunkLength() : 16320;
+            int bufSize = csPolicy.getChunkLength() > 0 ? csPolicy.getChunkLength() : 32 * 1024;
             inbuf = new SharedInputBuffer(bufSize);
             outbuf = new SharedOutputBuffer(bufSize);
             try {

@@ -125,8 +125,12 @@ public final class OAuth2TestUtils {
 
         client.path(parameters.getPath());
         Response response = client.get();
-
-        OAuthAuthorizationData authzData = response.readEntity(OAuthAuthorizationData.class);
+        OAuthAuthorizationData authzData;
+        try {
+            authzData = response.readEntity(OAuthAuthorizationData.class);
+        } finally {
+            response.close();
+        }
         return getLocation(client, authzData, parameters.getState());
     }
 
@@ -158,13 +162,15 @@ public final class OAuth2TestUtils {
         form.param("response_type", authzData.getResponseType());
         form.param("oauthDecision", "allow");
 
-        Response response = client.post(form);
-        String location = response.getHeaderString("Location");
-        if (state != null) {
-            Assert.assertTrue(location.contains("state=" + state));
-        }
+        try (Response response = client.post(form)) {
+            String location  = response.getHeaderString("Location");
 
-        return location;
+            if (state != null) {
+                Assert.assertTrue(location.contains("state=" + state));
+            }
+
+            return location;
+        }
     }
 
     public static ClientAccessToken getAccessTokenWithAuthorizationCode(WebClient client, String code) {

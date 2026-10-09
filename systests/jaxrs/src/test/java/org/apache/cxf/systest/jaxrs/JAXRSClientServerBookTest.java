@@ -36,11 +36,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 
 import javax.xml.namespace.QName;
 
-import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotAcceptableException;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.ServerErrorException;
@@ -341,6 +342,54 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         wc.type(MediaType.APPLICATION_FORM_URLENCODED);
         Response r = wc.post(new ByteArrayInputStream("".getBytes()));
         assertEquals("empty form", r.readEntity(String.class));
+    }
+
+    @Test
+    public void testTooManyFormParams() throws Exception {
+        // Exceeding 500 limit
+        String params = IntStream.range(0, 501).mapToObj(i -> "param" + i + "=" + i).collect(Collectors.joining("&"));
+        String address = "http://localhost:" + PORT + "/bookstore/form";
+        WebClient wc = WebClient.create(address);
+        wc.type(MediaType.APPLICATION_FORM_URLENCODED);
+        Response r = wc.post(new ByteArrayInputStream(params.getBytes(StandardCharsets.UTF_8)));
+        assertThat("max form params limit reached",  r.getStatus(), equalTo(413));
+    }
+
+    @Test
+    public void testTooManyFormParamsUsingForm() throws Exception {
+        // Exceeding 500 limit
+        String params = IntStream.range(0, 501).mapToObj(i -> "id" + i + "=" + i).collect(Collectors.joining("&"));
+        String address = "http://localhost:" + PORT + "/bookstore/formParams/1";
+        WebClient wc = WebClient.create(address);
+        wc.type(MediaType.APPLICATION_FORM_URLENCODED);
+        Response r = wc.post(new ByteArrayInputStream(params.getBytes(StandardCharsets.UTF_8)));
+        assertThat("max form params limit reached",  r.getStatus(), equalTo(413));
+    }
+    
+    @Test
+    public void testTooLargeFormParams() throws Exception {
+        // Exceeding 100Mb limit
+        String params = IntStream.range(0, 110)
+            .mapToObj(i -> "param" + i + "="
+                + new String(Integer.toString(i)).repeat(524800)).collect(Collectors.joining("&"));
+        String address = "http://localhost:" + PORT + "/bookstore/form";
+        WebClient wc = WebClient.create(address);
+        wc.type(MediaType.APPLICATION_FORM_URLENCODED);
+        Response r = wc.post(new ByteArrayInputStream(params.getBytes(StandardCharsets.UTF_8)));
+        assertThat("max form params limit reached",  r.getStatus(), equalTo(500));
+    }
+
+    @Test
+    public void testTooLargeFormParamsUsingForm() throws Exception {
+        // Exceeding 100Mb limit
+        String params = IntStream.range(0, 150)
+            .mapToObj(i -> "id" + i + "="
+                + new String(Integer.toString(i)).repeat(524800)).collect(Collectors.joining("&"));
+        String address = "http://localhost:" + PORT + "/bookstore/formParams/1";
+        WebClient wc = WebClient.create(address);
+        wc.type(MediaType.APPLICATION_FORM_URLENCODED);
+        Response r = wc.post(new ByteArrayInputStream(params.getBytes(StandardCharsets.UTF_8)));
+        assertThat("max form params limit reached",  r.getStatus(), equalTo(500));
     }
 
     @Test
@@ -1967,27 +2016,6 @@ public class JAXRSClientServerBookTest extends AbstractBusClientServerTestBase {
         WebClient client = WebClient.create(address);
         Book b = client.query("_s", "name==CXF*;id=ge=123;id=lt=124").get(Book.class);
         assertEquals(b.getId(), 123L);
-    }
-
-    @Test
-    public void testGetSearchBookSQL() throws Exception {
-        String address = "http://localhost:" + PORT
-            + "/bookstore/books/querycontext/id=ge=123";
-
-        WebClient client = WebClient.create(address);
-        client.accept("text/plain");
-        String sql = client.get(String.class);
-        assertEquals("SELECT * FROM books WHERE id >= '123'", sql);
-    }
-
-    @Test (expected = InternalServerErrorException.class)
-    public void testSearchUnknownParameter() throws Exception {
-        String address = "http://localhost:" + PORT
-            + "/bookstore/books/querycontext/id=ge=123%2C1==1";
-
-        WebClient client = WebClient.create(address);
-        client.accept("text/plain");
-        client.get(String.class);
     }
 
     @Test

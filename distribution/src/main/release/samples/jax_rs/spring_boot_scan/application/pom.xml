@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.apache.cxf.samples</groupId>
         <artifactId>cxf-samples</artifactId>
-        <version>4.2.1-SNAPSHOT</version>
+        <version>4.2.5-SNAPSHOT</version>
         <relativePath>../../..</relativePath>
     </parent>
     <artifactId>spring-boot-sample-rs-scan-app</artifactId>
@@ -15,7 +15,7 @@
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-spring-boot-starter-jaxrs</artifactId>
-            <version>4.2.1-SNAPSHOT</version>
+            <version>4.2.5-SNAPSHOT</version>
             <exclusions><!-- CXF uses java.util.logging by default -->
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
@@ -35,7 +35,7 @@
         <dependency>
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-features-metrics</artifactId>
-            <version>4.2.1-SNAPSHOT</version>
+            <version>4.2.5-SNAPSHOT</version>
         </dependency>
         <!-- Eureka Service Discovery Client -->
         <dependency>
@@ -125,6 +125,25 @@
                     </rules>
                 </configuration>
             </plugin>
+            <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-dependency-plugin</artifactId>
+                 <executions>
+                     <execution>
+                         <phase>generate-test-resources</phase>
+                         <goals>
+                             <goal>properties</goal>
+                         </goals>
+                     </execution>
+                 </executions>
+             </plugin>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-surefire-plugin</artifactId>
+                 <configuration>
+                     <argLine>-javaagent:${org.mockito:mockito-core:jar}</argLine>
+                 </configuration>
+             </plugin>
         </plugins>
     </build>
     <profiles>

@@ -21,7 +21,6 @@ package org.apache.cxf.endpoint.dynamic;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -31,6 +30,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -687,14 +687,10 @@ public class DynamicClientFactory {
                     if (url.getProtocol().startsWith("file")) {
                         File file = null;
                         // CXF-3884 use url-decoder to get the decoded file path from the url
-                        try {
-                            if (url.getPath() == null) {
-                                continue;
-                            }
-                            file = new File(URLDecoder.decode(url.getPath(), "utf-8"));
-                        } catch (UnsupportedEncodingException uee) {
-                            // ignored as utf-8 is supported
+                        if (url.getPath() == null) {
+                            continue;
                         }
+                        file = new File(URLDecoder.decode(url.getPath(), StandardCharsets.UTF_8));
 
                         if (null != file && file.exists()) {
                             classPath.append(file.getAbsolutePath())
@@ -976,14 +972,22 @@ public class DynamicClientFactory {
         return addedToNotDone ? null : element;
     }
 
-    public Node cloneNode(Document document, Node node, boolean deep) throws DOMException {
+    private Node cloneNode(Document document, Node node, boolean deep) throws DOMException {
         if (document == null || node == null) {
             return null;
         }
         int type = node.getNodeType();
 
         if (node.getOwnerDocument() == document) {
-            return node.cloneNode(deep);
+            // The schema/WSDL Document backing this node may be cached and shared across
+            // concurrent createClient() calls (see WSDLManagerImpl). The native cloneNode(true)
+            // walk triggers UserDataHandler callbacks (e.g. StaxUtils$LocationUserDataHandler)
+            // that mutate the source document's internal userData table, which is not
+            // thread-safe (WeakHashMap in Xerces-J, HashMap in the JDK DOM impl). Concurrent
+            // clones of the same shared document must therefore be serialized (CXF-9234).
+            synchronized (document) {
+                return node.cloneNode(deep);
+            }
         }
         Node clone;
         switch (type) {

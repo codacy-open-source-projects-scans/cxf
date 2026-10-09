@@ -47,6 +47,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 abstract class AbstractOAuthDataProviderTest {
     private static KeyPair keyPair;
@@ -257,6 +258,59 @@ abstract class AbstractOAuthDataProviderTest {
     }
 
     @Test
+    public void testRevokeAccessTokenIdorAcrossUsersOfSharedClient() {
+        // A multi-user shared client (e.g. a public mobile app with a known client_id).
+        // Its resourceOwnerSubject is intentionally null — many users share this client.
+        Client sharedClient = new Client();
+        sharedClient.setRedirectUris(Collections.singletonList("http://client/redirect"));
+        sharedClient.setClientId("103");
+        sharedClient.setClientSecret("secret");
+        getProvider().setClient(sharedClient);
+
+        // Alice obtains an access token via the shared client.
+        AccessTokenRegistration aliceReg = new AccessTokenRegistration();
+        aliceReg.setClient(sharedClient);
+        aliceReg.setApprovedScope(Collections.singletonList("a"));
+        aliceReg.setSubject(new UserSubject("alice"));
+        ServerAccessToken aliceToken = getProvider().createAccessToken(aliceReg);
+        assertNotNull(getProvider().getAccessToken(aliceToken.getTokenKey()));
+
+        // Bob obtains a separate access token via the same shared client.
+        AccessTokenRegistration bobReg = new AccessTokenRegistration();
+        bobReg.setClient(sharedClient);
+        bobReg.setApprovedScope(Collections.singletonList("a"));
+        bobReg.setSubject(new UserSubject("bob"));
+        ServerAccessToken bobToken = getProvider().createAccessToken(bobReg);
+        assertNotNull(getProvider().getAccessToken(bobToken.getTokenKey()));
+
+        // IDOR attempt: Bob (authenticated only as the shared client) submits Alice's token
+        // key to the revocation endpoint. The subject-aware revokeToken overload is called
+        // with Bob's identity, which must not match Alice's subject.
+        // The data provider must reject this with OAuthServiceException; the HTTP layer
+        // (TokenRevocationService) swallows it per RFC 7009 and returns 200 anyway.
+        try {
+            getProvider().revokeToken(sharedClient, new UserSubject("bob"), aliceToken.getTokenKey(),
+                                      OAuthConstants.ACCESS_TOKEN);
+            // Reaching here means the cross-user revocation was NOT blocked — fail the test.
+            fail(
+                "IDOR: revokeToken should have thrown OAuthServiceException when Bob tried to "
+                + "revoke Alice's token, but it succeeded silently"
+            );
+        } catch (OAuthServiceException expected) {
+            // Expected: the subject mismatch guard correctly rejected the request.
+        }
+
+        // Alice's token must still be intact after the blocked revocation attempt.
+        assertNotNull(
+            "Alice's token must survive a cross-user revocation attempt",
+            getProvider().getAccessToken(aliceToken.getTokenKey())
+        );
+
+        // Bob's own token must remain unaffected regardless.
+        assertNotNull(getProvider().getAccessToken(bobToken.getTokenKey()));
+    }
+
+    @Test
     public void testAddGetDeleteRefreshToken() {
         Client c = addClient("101", "bob");
 
@@ -290,6 +344,63 @@ abstract class AbstractOAuthDataProviderTest {
         getProvider().revokeToken(c, rt.getTokenKey(), OAuthConstants.REFRESH_TOKEN);
 
         assertNull(getProvider().getRefreshToken(rt.getTokenKey()));
+    }
+
+    /**
+     * Regression test for cross-client refresh token acceptance when recycleRefreshTokens=false.
+     * Client B must not be able to exchange Client A's refresh token for an access token.
+     */
+    @Test
+    public void testRefreshTokenSingleUseEnforcedWhenRecycled() {
+        Client c = addClient("101", "bob");
+
+        AccessTokenRegistration atr = new AccessTokenRegistration();
+        atr.setClient(c);
+        atr.setApprovedScope(Arrays.asList("a", "refreshToken"));
+        atr.setSubject(c.getResourceOwnerSubject());
+
+        ServerAccessToken at = getProvider().createAccessToken(atr);
+        String rtKey = at.getRefreshToken();
+        assertNotNull("Expected a refresh token to be issued", rtKey);
+
+        // First use must succeed and invalidate the original token.
+        getProvider().refreshAccessToken(c, rtKey, Collections.emptyList());
+
+        // Second use of the same (now consumed) refresh token must be denied.
+        try {
+            getProvider().refreshAccessToken(c, rtKey, Collections.emptyList());
+            fail("Replayed refresh token must be rejected");
+        } catch (OAuthServiceException ex) {
+            assertEquals(OAuthConstants.ACCESS_DENIED, ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testCrossClientRefreshTokenRejectedWhenRecycleDisabled() {
+        getProvider().setRecycleRefreshTokens(false);
+
+        // Client A obtains a refresh token for its resource owner.
+        Client clientA = addClient("101", "alice");
+        AccessTokenRegistration atrA = new AccessTokenRegistration();
+        atrA.setClient(clientA);
+        atrA.setApprovedScope(Arrays.asList("a", "refreshToken"));
+        atrA.setSubject(clientA.getResourceOwnerSubject());
+        ServerAccessToken atA = getProvider().createAccessToken(atrA);
+        assertNotNull(atA.getRefreshToken());
+
+        // Client B is a separate registered client controlled by an attacker.
+        Client clientB = addClient("102", "bob");
+
+        // Attacker uses Client B credentials to present Client A's refresh token.
+        try {
+            getProvider().refreshAccessToken(clientB, atA.getRefreshToken(), Collections.emptyList());
+            fail("Cross-client refresh token use must be rejected with OAuthServiceException");
+        } catch (OAuthServiceException ex) {
+            assertEquals(OAuthConstants.INVALID_GRANT, ex.getMessage());
+        }
+
+        // Client A's original access token must remain usable.
+        assertNotNull(getProvider().getAccessToken(atA.getTokenKey()));
     }
 
     protected Client addClient(String clientId, String userLogin) {
@@ -330,6 +441,8 @@ abstract class AbstractOAuthDataProviderTest {
 
     protected void tearDownClients() {
         tearDownClient("101");
+        tearDownClient("102");
+        tearDownClient("103");
         tearDownClient("12345");
         tearDownClient("56789");
         tearDownClient("09876");

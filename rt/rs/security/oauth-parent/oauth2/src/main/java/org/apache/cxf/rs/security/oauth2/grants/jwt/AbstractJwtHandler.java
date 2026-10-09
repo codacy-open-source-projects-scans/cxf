@@ -60,7 +60,8 @@ public abstract class AbstractJwtHandler extends AbstractGrantHandler {
         if (getAudience() != null) {
             JAXRSUtils.getCurrentMessage().put(JwtConstants.EXPECTED_CLAIM_AUDIENCE, getAudience());
         }
-        JwtUtils.validateTokenClaims(claims, ttl, clockOffset, true);
+        // We must have an Audience (RFC 7523, section 3)
+        JwtUtils.validateTokenClaims(claims, ttl, clockOffset, true, true);
 
         validateIssuer(claims.getIssuer());
         validateSubject(client, claims.getSubject());
@@ -80,6 +81,13 @@ public abstract class AbstractJwtHandler extends AbstractGrantHandler {
     protected void validateSubject(Client client, String subject) {
         // We must have a Subject
         if (subject == null) {
+            throw new OAuthServiceException(OAuthConstants.INVALID_GRANT);
+        }
+        // Strict-by-default: require the assertion subject to match the authenticated client id.
+        // Subclasses can override this method to support a different authorization model
+        // (for example, trusted delegation with an explicit client-to-subject policy).
+        if (client != null && client.getClientId() != null
+            && !client.getClientId().equals(subject)) {
             throw new OAuthServiceException(OAuthConstants.INVALID_GRANT);
         }
     }

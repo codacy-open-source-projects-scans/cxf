@@ -63,11 +63,14 @@ public class PublicClientTest extends AbstractClientServerTestBase {
     final String port;
 
     private final String tokenServiceAddress;
+    private final String digestOnlyTokenServiceAddress;
 
     public PublicClientTest(String port) {
         this.port = port;
         // services2 doesn't require basic auth
         tokenServiceAddress = "https://localhost:" + port + "/services2/";
+        // services3 is configured with DigestCodeVerifier only
+        digestOnlyTokenServiceAddress = "https://localhost:" + port + "/services3/";
     }
 
     @BeforeClass
@@ -112,6 +115,8 @@ public class PublicClientTest extends AbstractClientServerTestBase {
             fail("Failure expected on a missing (registered) redirectURI");
         } catch (Exception ex) {
             // expected
+        } finally {
+            client.close();
         }
     }
 
@@ -122,12 +127,22 @@ public class PublicClientTest extends AbstractClientServerTestBase {
 
     @org.junit.Test
     public void testPKCEPlainMissingVerifier() throws Exception {
-        testPKCEMissingVerifier(new PlainCodeVerifier());
+        try {
+            testPKCE(new PlainCodeVerifier(), false, false);
+            fail("Failure expected on a missing verifier");
+        } catch (OAuthServiceException ex) {
+            assertFalse(ex.getError().getError().isEmpty());
+        }
     }
 
     @org.junit.Test
     public void testPKCEPlainDifferentVerifier() throws Exception {
-        testPKCEDifferentVerifier(new PlainCodeVerifier());
+        try {
+            testPKCE(new PlainCodeVerifier(), true, true);
+            fail("Failure expected on a different verifier");
+        } catch (OAuthServiceException ex) {
+            assertFalse(ex.getError().getError().isEmpty());
+        }
     }
 
     @org.junit.Test
@@ -137,78 +152,46 @@ public class PublicClientTest extends AbstractClientServerTestBase {
 
     @org.junit.Test
     public void testPKCEDigestMissingVerifier() {
-        testPKCEMissingVerifier(new DigestCodeVerifier());
-    }
-
-    @org.junit.Test
-    public void testPKCEDigestDifferentVerifier() {
-        testPKCEDifferentVerifier(new DigestCodeVerifier());
-    }
-
-    private void testPKCE(CodeVerifierTransformer transformer) {
-        URL busFile = PublicClientTest.class.getResource("publicclient.xml");
-
-        String address = "https://localhost:" + port + "/services/";
-        WebClient client = WebClient.create(address, OAuth2TestUtils.setupProviders(),
-                                            "alice", "security", busFile.toString());
-        // Save the Cookie for the second request...
-        WebClient.getConfig(client).getRequestContext().put(
-            org.apache.cxf.message.Message.MAINTAIN_SESSION, Boolean.TRUE);
-
-        // Get Authorization Code
-        AuthorizationCodeParameters parameters = new AuthorizationCodeParameters();
-        parameters.setConsumerId("consumer-id");
-        String codeVerifier = Base64UrlUtility.encode(CryptoUtils.generateSecureRandomBytes(32));
-        parameters.setCodeChallenge(transformer.transformCodeVerifier(codeVerifier));
-        parameters.setCodeChallengeMethod(transformer.getChallengeMethod());
-        parameters.setResponseType(OAuthConstants.CODE_RESPONSE_TYPE);
-        parameters.setPath("authorize/");
-
-        String location = OAuth2TestUtils.getLocation(client, parameters);
-        String code = OAuth2TestUtils.getSubstring(location, "code");
-        assertNotNull(code);
-
-        // Now get the access token
-        client = WebClient.create(tokenServiceAddress, busFile.toString());
-        ClientAccessToken accessToken =
-            OAuth2TestUtils.getAccessTokenWithAuthorizationCode(client, code, "consumer-id", null, codeVerifier);
-        assertNotNull(accessToken.getTokenKey());
-    }
-
-    private void testPKCEMissingVerifier(CodeVerifierTransformer transformer) {
-        URL busFile = PublicClientTest.class.getResource("publicclient.xml");
-
-        String address = "https://localhost:" + port + "/services/";
-        WebClient client = WebClient.create(address, OAuth2TestUtils.setupProviders(),
-                                            "alice", "security", busFile.toString());
-        // Save the Cookie for the second request...
-        WebClient.getConfig(client).getRequestContext().put(
-            org.apache.cxf.message.Message.MAINTAIN_SESSION, Boolean.TRUE);
-
-        // Get Authorization Code
-        AuthorizationCodeParameters parameters = new AuthorizationCodeParameters();
-        parameters.setConsumerId("consumer-id");
-        String codeVerifier = Base64UrlUtility.encode(CryptoUtils.generateSecureRandomBytes(32));
-        parameters.setCodeChallenge(transformer.transformCodeVerifier(codeVerifier));
-        parameters.setCodeChallengeMethod(transformer.getChallengeMethod());
-        parameters.setResponseType(OAuthConstants.CODE_RESPONSE_TYPE);
-        parameters.setPath("authorize/");
-
-        String location = OAuth2TestUtils.getLocation(client, parameters);
-        String code = OAuth2TestUtils.getSubstring(location, "code");
-        assertNotNull(code);
-
-        // Now get the access token
-        client = WebClient.create(tokenServiceAddress, busFile.toString());
         try {
-            OAuth2TestUtils.getAccessTokenWithAuthorizationCode(client, code, "consumer-id", null);
+            testPKCE(new DigestCodeVerifier(), false, false);
             fail("Failure expected on a missing verifier");
         } catch (OAuthServiceException ex) {
             assertFalse(ex.getError().getError().isEmpty());
         }
     }
 
-    private void testPKCEDifferentVerifier(CodeVerifierTransformer transformer) {
+    @org.junit.Test
+    public void testPKCEDigestDifferentVerifier() {
+        try {
+            testPKCE(new DigestCodeVerifier(), true, true);
+            fail("Failure expected on a different verifier");
+        } catch (OAuthServiceException ex) {
+            assertFalse(ex.getError().getError().isEmpty());
+        }
+    }
+
+    @org.junit.Test
+    public void testPKCEDigestOnlyServer() {
+        try {
+            testPKCE(new PlainCodeVerifier(), true, false, digestOnlyTokenServiceAddress);
+            fail("Failure expected when plain verifier is not supported");
+        } catch (OAuthServiceException ex) {
+            assertFalse(ex.getError().getError().isEmpty());
+        }
+
+        testPKCE(new DigestCodeVerifier(), true, false, digestOnlyTokenServiceAddress);
+    }
+
+    private void testPKCE(CodeVerifierTransformer transformer) {
+        testPKCE(transformer, true, false, tokenServiceAddress);
+    }
+
+    private void testPKCE(CodeVerifierTransformer transformer, boolean sendVerifier, boolean sendFakeVerifier) {
+        testPKCE(transformer, sendVerifier, sendFakeVerifier, tokenServiceAddress);
+    }
+
+    private void testPKCE(CodeVerifierTransformer transformer, boolean sendVerifier,
+                          boolean sendFakeVerifier, String serviceAddress) {
         URL busFile = PublicClientTest.class.getResource("publicclient.xml");
 
         String address = "https://localhost:" + port + "/services/";
@@ -230,16 +213,21 @@ public class PublicClientTest extends AbstractClientServerTestBase {
         String location = OAuth2TestUtils.getLocation(client, parameters);
         String code = OAuth2TestUtils.getSubstring(location, "code");
         assertNotNull(code);
+        client.close();
 
         // Now get the access token
-        client = WebClient.create(tokenServiceAddress, busFile.toString());
-
-        codeVerifier = Base64UrlUtility.encode(CryptoUtils.generateSecureRandomBytes(32));
+        client = WebClient.create(serviceAddress, busFile.toString());
+        if (!sendVerifier) {
+            codeVerifier = null;
+        } else if (sendFakeVerifier) {
+            codeVerifier = Base64UrlUtility.encode(CryptoUtils.generateSecureRandomBytes(32));
+        }
         try {
-            OAuth2TestUtils.getAccessTokenWithAuthorizationCode(client, code, "consumer-id", null, codeVerifier);
-            fail("Failure expected on a different verifier");
-        } catch (OAuthServiceException ex) {
-            assertFalse(ex.getError().getError().isEmpty());
+            ClientAccessToken accessToken =
+                OAuth2TestUtils.getAccessTokenWithAuthorizationCode(client, code, "consumer-id", null, codeVerifier);
+            assertNotNull(accessToken.getTokenKey());
+        } finally {
+            client.close();
         }
     }
 

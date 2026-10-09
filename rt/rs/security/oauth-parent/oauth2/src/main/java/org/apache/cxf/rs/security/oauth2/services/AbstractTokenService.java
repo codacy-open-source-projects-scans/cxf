@@ -19,6 +19,8 @@
 
 package org.apache.cxf.rs.security.oauth2.services;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -138,7 +140,9 @@ public class AbstractTokenService extends AbstractOAuthService {
         if (clientSecretVerifier != null) {
             return clientSecretVerifier.validateClientSecret(client, providedClientSecret);
         }
-        return client.getClientSecret() != null && client.getClientSecret().equals(providedClientSecret);
+        return client.getClientSecret() != null && providedClientSecret != null 
+            && MessageDigest.isEqual(client.getClientSecret().getBytes(StandardCharsets.UTF_8), 
+                                     providedClientSecret.getBytes(StandardCharsets.UTF_8));
     }
     protected boolean isValidPublicClient(Client client, String clientId) {
         return canSupportPublicClients
@@ -157,26 +161,29 @@ public class AbstractTokenService extends AbstractOAuthService {
     }
 
     protected void checkCertificateBinding(Client client, TLSSessionInfo tlsSessionInfo) {
-        String subjectDn = client.getProperties().get(OAuthConstants.TLS_CLIENT_AUTH_SUBJECT_DN);
-        if (subjectDn == null && client.getApplicationCertificates().isEmpty()) {
-            LOG.warning("Client \"" + client.getClientId() + "\" can not be bound to the TLS certificate");
-            reportInvalidClient();
-        }
         X509Certificate cert = OAuthUtils.getRootTLSCertificate(tlsSessionInfo);
-
-        if (subjectDn != null
-            && !subjectDn.equals(OAuthUtils.getSubjectDnFromTLSCertificates(cert))) {
-            LOG.warning("Client \"" + client.getClientId() + "\" can not be bound to the TLS certificate");
-            reportInvalidClient();
-        }
-        String issuerDn = client.getProperties().get(OAuthConstants.TLS_CLIENT_AUTH_ISSUER_DN);
-        if (issuerDn != null
-            && !issuerDn.equals(OAuthUtils.getIssuerDnFromTLSCertificates(cert))) {
-            LOG.warning("Client \"" + client.getClientId() + "\" can not be bound to the TLS certificate");
-            reportInvalidClient();
-        }
         if (!client.getApplicationCertificates().isEmpty()) {
             compareTlsCertificates(tlsSessionInfo, client.getApplicationCertificates());
+        } else {
+            String subjectDn = client.getProperties().get(OAuthConstants.TLS_CLIENT_AUTH_SUBJECT_DN);
+            String issuerDn = client.getProperties().get(OAuthConstants.TLS_CLIENT_AUTH_ISSUER_DN);
+            if (subjectDn == null && issuerDn == null) {
+                LOG.warning("Client \"" + client.getClientId()
+                    + "\" can not be bound to the TLS certificate");
+                reportInvalidClient();
+            }
+            if (subjectDn != null
+                && !subjectDn.equals(OAuthUtils.getSubjectDnFromTLSCertificates(cert))) {
+                LOG.warning("Client \"" + client.getClientId()
+                    + "\" can not be bound to the TLS certificate");
+                reportInvalidClient();
+            }
+            if (issuerDn != null
+                && !issuerDn.equals(OAuthUtils.getIssuerDnFromTLSCertificates(cert))) {
+                LOG.warning("Client \"" + client.getClientId()
+                    + "\" can not be bound to the TLS certificate");
+                reportInvalidClient();
+            }
         }
         OAuthUtils.setCertificateThumbprintConfirmation(getMessageContext(), cert);
     }
@@ -250,17 +257,18 @@ public class AbstractTokenService extends AbstractOAuthService {
             return null;
         }
         Client client = null;
+        String sanitizedClientId = AuthorizationUtils.stripControlCharacters(clientId);
         try {
             client = getValidClient(clientId, clientSecret, params);
         } catch (OAuthServiceException ex) {
-            LOG.warning("No valid client found for clientId: " + clientId);
+            LOG.warning("No valid client found for clientId: " + sanitizedClientId);
             if (ex.getError() != null) {
                 reportInvalidClient(ex.getError());
                 return null;
             }
         }
         if (client == null) {
-            LOG.warning("No valid client found for clientId: " + clientId);
+            LOG.warning("No valid client found for clientId: " + sanitizedClientId);
             reportInvalidClient();
         }
         return client;

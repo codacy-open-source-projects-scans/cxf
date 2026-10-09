@@ -63,9 +63,22 @@ public class FiqlParser<T> extends AbstractSearchConditionParser<T> {
 
 
     public static final String SUPPORT_SINGLE_EQUALS = "fiql.support.single.equals.operator";
+    /**
+     * Context property limiting how deeply parenthesized sub-expressions may nest.
+     * The parser recurses once per nesting level, so without a bound a crafted
+     * expression of thousands of nested brackets triggers a StackOverflowError on
+     * the request thread. Must be a positive integer; the default is 64.
+     */
+    public static final String MAX_PARENTHESIS_DEPTH = "fiql.max.parenthesis.depth";
+    /**
+    * Context property limiting the length of a FIQL expression. The default is 4 KiB.
+     */
+    public static final String MAX_EXPRESSION_LENGTH = "fiql.max.expression.length";
     public static final String EXTENSION_COUNT = "count";
     protected static final String EXTENSION_COUNT_OPEN = EXTENSION_COUNT + "(";
 
+    private static final int DEFAULT_MAX_PARENTHESIS_DEPTH = 64;
+    private static final int DEFAULT_MAX_EXPRESSION_LENGTH = 4 * 1024;
     private static final Map<String, ConditionType> OPERATORS_MAP;
     private static final Pattern COMPARATORS_PATTERN;
     private static final Pattern COMPARATORS_PATTERN_SINGLE_EQUALS;
@@ -100,6 +113,10 @@ public class FiqlParser<T> extends AbstractSearchConditionParser<T> {
 
     protected Map<String, ConditionType> operatorsMap = OPERATORS_MAP;
     protected Pattern comparatorsPattern = COMPARATORS_PATTERN;
+
+    private final int maxParenthesisDepth;
+    private final int maxExpressionLength;
+
     /**
      * Creates FIQL parser.
      *
@@ -134,11 +151,51 @@ public class FiqlParser<T> extends AbstractSearchConditionParser<T> {
                       Map<String, String> beanProperties) {
         super(tclass, contextProperties, beanProperties);
 
+        this.maxParenthesisDepth = parseMaxParenthesisDepth(this.contextProperties.get(MAX_PARENTHESIS_DEPTH));
+        this.maxExpressionLength = parseMaxExpressionLength(
+            this.contextProperties.get(MAX_EXPRESSION_LENGTH));
+
         if (PropertyUtils.isTrue(this.contextProperties.get(SUPPORT_SINGLE_EQUALS))) {
             operatorsMap = new HashMap<>(operatorsMap);
             operatorsMap.put("=", ConditionType.EQUALS);
             comparatorsPattern = COMPARATORS_PATTERN_SINGLE_EQUALS;
         }
+    }
+
+    private static int parseMaxParenthesisDepth(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return DEFAULT_MAX_PARENTHESIS_DEPTH;
+        }
+        final int depth;
+        try {
+            depth = Integer.parseInt(value.trim());
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(MAX_PARENTHESIS_DEPTH + " must be a positive integer, got: "
+                + value, ex);
+        }
+        if (depth < 1) {
+            throw new IllegalArgumentException(MAX_PARENTHESIS_DEPTH + " must be a positive integer, got: "
+                + value);
+        }
+        return depth;
+    }
+
+    private static int parseMaxExpressionLength(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return DEFAULT_MAX_EXPRESSION_LENGTH;
+        }
+        final int length;
+        try {
+            length = Integer.parseInt(value.trim());
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException(MAX_EXPRESSION_LENGTH
+                + " must be a positive integer, got: " + value, ex);
+        }
+        if (length < 1) {
+            throw new IllegalArgumentException(MAX_EXPRESSION_LENGTH
+                + " must be a positive integer, got: " + value);
+        }
+        return length;
     }
 
     /**
@@ -165,11 +222,21 @@ public class FiqlParser<T> extends AbstractSearchConditionParser<T> {
      */
     @Override
     public SearchCondition<T> parse(String fiqlExpression) throws SearchParseException {
-        ASTNode<T> ast = parseAndsOrsBrackets(fiqlExpression);
+        if (fiqlExpression.length() > maxExpressionLength) {
+            throw new SearchParseException("Exceeded the maximum FIQL expression length of "
+                + maxExpressionLength + "; the limit can be adjusted with the "
+                + MAX_EXPRESSION_LENGTH + " property");
+        }
+        ASTNode<T> ast = parseAndsOrsBrackets(fiqlExpression, 0);
         return ast.build();
     }
 
-    private ASTNode<T> parseAndsOrsBrackets(String expr) throws SearchParseException {
+    private ASTNode<T> parseAndsOrsBrackets(String expr, int depth) throws SearchParseException {
+        if (depth > maxParenthesisDepth) {
+            throw new SearchParseException("Exceeded the maximum FIQL expression nesting depth of "
+                + maxParenthesisDepth + "; the limit can be adjusted with the "
+                + MAX_PARENTHESIS_DEPTH + " property");
+        }
         List<String> subexpressions = new ArrayList<>();
         List<String> operators = new ArrayList<>();
         int level = 0;
@@ -226,7 +293,7 @@ public class FiqlParser<T> extends AbstractSearchConditionParser<T> {
                 String subex = subexpressions.get(from);
                 ASTNode<T> node;
                 if (subex.startsWith("(")) {
-                    node = parseAndsOrsBrackets(subex.substring(1, subex.length() - 1));
+                    node = parseAndsOrsBrackets(subex.substring(1, subex.length() - 1), depth + 1);
                 } else {
                     node = parseComparison(subex);
                 }

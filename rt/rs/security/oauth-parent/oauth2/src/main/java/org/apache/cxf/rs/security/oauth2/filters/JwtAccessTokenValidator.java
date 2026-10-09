@@ -32,6 +32,7 @@ import org.apache.cxf.rs.security.jose.jwt.JoseJwtConsumer;
 import org.apache.cxf.rs.security.jose.jwt.JwtClaims;
 import org.apache.cxf.rs.security.jose.jwt.JwtConstants;
 import org.apache.cxf.rs.security.jose.jwt.JwtToken;
+import org.apache.cxf.rs.security.jose.jwt.JwtUtils;
 import org.apache.cxf.rs.security.oauth2.common.AccessTokenValidation;
 import org.apache.cxf.rs.security.oauth2.common.OAuthPermission;
 import org.apache.cxf.rs.security.oauth2.common.UserSubject;
@@ -44,8 +45,13 @@ import org.apache.cxf.rs.security.oauth2.utils.OAuthUtils;
 public class JwtAccessTokenValidator extends JoseJwtConsumer implements AccessTokenValidator {
 
     private static final String USERNAME_PROP = "username";
+    private static final String TOKEN_USE_CLAIM = "token_use";
+    private static final String ACCESS_TOKEN_USE = "access";
+    private static final String INVALID_TOKEN_TYPE = "Invalid token type";
 
     private Map<String, String> jwtAccessTokenClaimMap;
+    private boolean validateAudience = true;
+    private boolean requireAudience;
 
     public List<String> getSupportedAuthorizationSchemes() {
         return Collections.singletonList(OAuthConstants.BEARER_AUTHORIZATION_SCHEME);
@@ -64,6 +70,30 @@ public class JwtAccessTokenValidator extends JoseJwtConsumer implements AccessTo
         }
     }
 
+    @Override
+    protected void validateToken(JwtToken jwt) {
+        validateTokenType(jwt);
+
+        // We must have an issuer
+        if (jwt.getClaim(JwtConstants.CLAIM_ISSUER) == null) {
+            throw new OAuthServiceException(OAuthConstants.INVALID_GRANT);
+        }
+
+        JwtUtils.validateTokenClaims(jwt.getClaims(), getTtl(), getClockOffset(), isValidateAudience(),
+                                     isRequireAudience());
+    }
+
+    private void validateTokenType(JwtToken jwt) {
+        Object tokenType = jwt.getJwsHeader(JoseConstants.HEADER_TYPE);
+        if (tokenType != null && !JoseConstants.TYPE_AT_JWT.equals(tokenType.toString())) {
+            throw new OAuthServiceException(INVALID_TOKEN_TYPE);
+        }
+
+        String tokenUse = jwt.getClaims().getStringProperty(TOKEN_USE_CLAIM);
+        if (tokenUse != null && !ACCESS_TOKEN_USE.equals(tokenUse)) {
+            throw new OAuthServiceException(INVALID_TOKEN_TYPE);
+        }
+    }
 
     private AccessTokenValidation convertClaimsToValidation(JwtClaims claims) {
         AccessTokenValidation atv = new AccessTokenValidation();
@@ -134,4 +164,24 @@ public class JwtAccessTokenValidator extends JoseJwtConsumer implements AccessTo
         this.jwtAccessTokenClaimMap = jwtAccessTokenClaimMap;
     }
 
+    public boolean isValidateAudience() {
+        return validateAudience;
+    }
+
+    public void setValidateAudience(boolean validateAudience) {
+        this.validateAudience = validateAudience;
+    }
+
+    public boolean isRequireAudience() {
+        return requireAudience;
+    }
+
+    /**
+     * Reject tokens which do not contain an "aud" claim. By default, a token without an "aud" claim
+     * passes the audience restriction check unless JwtConstants.EXPECTED_CLAIM_AUDIENCE is configured.
+     * This only applies if "validateAudience" is enabled.
+     */
+    public void setRequireAudience(boolean requireAudience) {
+        this.requireAudience = requireAudience;
+    }
 }

@@ -28,7 +28,7 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-parent</artifactId>
-        <version>4.2.1-SNAPSHOT</version>
+        <version>4.2.5-SNAPSHOT</version>
         <relativePath>../../../parent/pom.xml</relativePath>
     </parent>
     <properties>
@@ -99,7 +99,7 @@
         <dependency>
             <groupId>com.sun.xml.ws</groupId>
             <artifactId>jaxws-rt</artifactId>
-            <version>4.0.4</version>
+            <version>4.0.5</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -165,17 +165,9 @@
             <activation>
                 <jdk>[23,24)</jdk>
             </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <argLine>${cxf.surefire.fork.vmargs} -Djava.security.manager=allow</argLine>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
+            <properties>
+                <cxf.surefire.fork.vmargs.extra>-Djava.security.manager=allow</cxf.surefire.fork.vmargs.extra>
+            </properties>
         </profile>
     </profiles>
 </project>

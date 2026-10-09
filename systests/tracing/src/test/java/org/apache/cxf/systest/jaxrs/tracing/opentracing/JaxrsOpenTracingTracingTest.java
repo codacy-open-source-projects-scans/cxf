@@ -66,10 +66,9 @@ import io.opentracing.tag.Tags;
 
 import org.junit.After;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
+import static org.apache.cxf.systest.HasSize.hasSize;
 import static org.apache.cxf.systest.jaxrs.tracing.opentracing.HasSpan.hasSpan;
 import static org.apache.cxf.systest.jaxrs.tracing.opentracing.IsLogContaining.hasItem;
 import static org.apache.cxf.systest.jaxrs.tracing.opentracing.IsTagContaining.hasItem;
@@ -79,6 +78,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class JaxrsOpenTracingTracingTest extends AbstractClientServerTestBase {
@@ -87,9 +87,6 @@ public class JaxrsOpenTracingTracingTest extends AbstractClientServerTestBase {
     private static final AtomicLong RANDOM = new AtomicLong();
 
     private static final InMemoryReporter REPORTER = new InMemoryReporter();
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     private final Tracer tracer = new JaegerTracer.Builder("tracer-jaxrs")
         .withSampler(new ConstSampler(true))
@@ -199,10 +196,9 @@ public class JaxrsOpenTracingTracingTest extends AbstractClientServerTestBase {
         final Response r = withTrace(createWebClient("/bookstore/books/async"), spanId).get();
         assertEquals(Status.OK.getStatusCode(), r.getStatus());
 
-        await().atMost(Duration.ofSeconds(5L)).until(()-> REPORTER.getSpans().size() == 2);
+        await().atMost(Duration.ofSeconds(5L)).untilAsserted(() -> assertThat(REPORTER.getSpans(), hasSize(2)));
 
         final List<JaegerSpan> spans = getSpansSorted();
-        assertThat(spans.size(), equalTo(2));
         assertEquals("Processing books", spans.get(0).getOperationName());
         assertEquals("GET /bookstore/books/async", spans.get(1).getOperationName());
         assertThat(spans.get(1).getReferences(), not(empty()));
@@ -226,10 +222,9 @@ public class JaxrsOpenTracingTracingTest extends AbstractClientServerTestBase {
         final Response r = createWebClient("/bookstore/books/async").get();
         assertEquals(Status.OK.getStatusCode(), r.getStatus());
 
-        await().atMost(Duration.ofSeconds(5L)).until(()-> REPORTER.getSpans().size() == 2);
+        await().atMost(Duration.ofSeconds(5L)).untilAsserted(() -> assertThat(REPORTER.getSpans(), hasSize(2)));
 
         final List<JaegerSpan> spans = getSpansSorted();
-        assertThat(spans.size(), equalTo(2));
         assertThat(spans.get(0).getOperationName(), equalTo("Processing books"));
         assertThat(spans.get(1).getOperationName(), equalTo("GET /bookstore/books/async"));
     }
@@ -241,9 +236,8 @@ public class JaxrsOpenTracingTracingTest extends AbstractClientServerTestBase {
         final Response r = client.async().get().get(1L, TimeUnit.SECONDS);
         assertEquals(Status.OK.getStatusCode(), r.getStatus());
 
-        await().atMost(Duration.ofSeconds(5L)).until(()-> REPORTER.getSpans().size() == 3);
+        await().atMost(Duration.ofSeconds(5L)).untilAsserted(() -> assertThat(REPORTER.getSpans(), hasSize(3)));
 
-        assertThat(REPORTER.getSpans().size(), equalTo(3));
         assertThat(REPORTER.getSpans().get(0).getOperationName(), equalTo("Get Books"));
         assertThat(REPORTER.getSpans().get(1).getOperationName(), equalTo("GET /bookstore/books"));
         assertThat(REPORTER.getSpans().get(1).getTags(), hasItem(Tags.SPAN_KIND.getKey(), Tags.SPAN_KIND_SERVER));
@@ -325,9 +319,8 @@ public class JaxrsOpenTracingTracingTest extends AbstractClientServerTestBase {
         }
 
         // Await till flush happens, usually every second
-        await().atMost(Duration.ofSeconds(5L)).until(()-> REPORTER.getSpans().size() == 4);
+        await().atMost(Duration.ofSeconds(5L)).untilAsserted(() -> assertThat(REPORTER.getSpans(), hasSize(4)));
 
-        assertThat(REPORTER.getSpans().size(), equalTo(4));
         assertThat(REPORTER.getSpans().get(3).getOperationName(), equalTo("test span"));
         assertThat(REPORTER.getSpans().get(3).getReferences(), empty());
     }
@@ -342,9 +335,8 @@ public class JaxrsOpenTracingTracingTest extends AbstractClientServerTestBase {
             assertEquals(Status.OK.getStatusCode(), r.getStatus());
             assertThat(tracer.activeSpan().context(), equalTo(span.context()));
 
-            await().atMost(Duration.ofSeconds(5L)).until(()-> REPORTER.getSpans().size() == 3);
+            await().atMost(Duration.ofSeconds(5L)).untilAsserted(() -> assertThat(REPORTER.getSpans(), hasSize(3)));
 
-            assertThat(REPORTER.getSpans().size(), equalTo(3));
             assertThat(REPORTER.getSpans().get(0).getOperationName(), equalTo("Get Books"));
             assertThat(REPORTER.getSpans().get(0).getReferences(), not(empty()));
             assertThat(REPORTER.getSpans().get(1).getOperationName(), equalTo("GET /bookstore/books"));
@@ -356,9 +348,8 @@ public class JaxrsOpenTracingTracingTest extends AbstractClientServerTestBase {
         }
 
         // Await till flush happens, usually every second
-        await().atMost(Duration.ofSeconds(5L)).until(()-> REPORTER.getSpans().size() == 4);
+        await().atMost(Duration.ofSeconds(5L)).untilAsserted(() -> assertThat(REPORTER.getSpans(), hasSize(4)));
 
-        assertThat(REPORTER.getSpans().size(), equalTo(4));
         assertThat(REPORTER.getSpans().get(3).getOperationName(), equalTo("test span"));
         assertThat(REPORTER.getSpans().get(3).getReferences(), empty());
     }
@@ -387,16 +378,12 @@ public class JaxrsOpenTracingTracingTest extends AbstractClientServerTestBase {
         httpClientPolicy.setReceiveTimeout(100);
         WebClient.getConfig(client).getHttpConduit().setClient(httpClientPolicy);
 
-        expectedException.expect(ProcessingException.class);
-        try {
-            client.get();
-        } finally {
-            await().atMost(Duration.ofSeconds(5L)).until(()-> REPORTER.getSpans().size() == 2);
-            assertThat(REPORTER.getSpans().toString(), REPORTER.getSpans().size(), equalTo(2));
-            assertThat(REPORTER.getSpans().get(0).getOperationName(), equalTo("GET " + client.getCurrentURI()));
-            assertThat(REPORTER.getSpans().get(0).getTags(), hasItem(Tags.ERROR.getKey(), Boolean.TRUE));
-            assertThat(REPORTER.getSpans().get(1).getOperationName(), equalTo("GET /bookstore/books/long"));
-        }
+        assertThrows(ProcessingException.class, () -> client.get());
+
+        await().atMost(Duration.ofSeconds(5L)).untilAsserted(() -> assertThat(REPORTER.getSpans(), hasSize(2)));
+        assertThat(REPORTER.getSpans().get(0).getOperationName(), equalTo("GET " + client.getCurrentURI()));
+        assertThat(REPORTER.getSpans().get(0).getTags(), hasItem(Tags.ERROR.getKey(), Boolean.TRUE));
+        assertThat(REPORTER.getSpans().get(1).getOperationName(), equalTo("GET /bookstore/books/long"));
     }
 
     @Test

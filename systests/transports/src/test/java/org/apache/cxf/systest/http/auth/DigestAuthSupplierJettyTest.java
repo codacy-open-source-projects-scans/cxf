@@ -47,7 +47,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
-public class DigestAuthSupplierJettyTest extends AbstractClientServerTestBase {
+class DigestAuthSupplierJettyTest extends AbstractClientServerTestBase {
 
     private static final String USER = "alice";
     private static final String PWD = "ecila";
@@ -59,7 +59,8 @@ public class DigestAuthSupplierJettyTest extends AbstractClientServerTestBase {
 
     @Test
     public void test() {
-        WebClient client = WebClient.create("http://localhost:" + DigestAuthSupplierJettyServer.PORT, (String) null);
+        final WebClient client = WebClient
+            .create("http://localhost:" + DigestAuthSupplierJettyServer.PORT + "/", (String) null);
 
         assertThrows(NotAuthorizedException.class, () -> client.get(String.class));
 

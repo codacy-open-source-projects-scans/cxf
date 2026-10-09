@@ -50,9 +50,14 @@ public final class JwtUtils {
             return;
         }
         Instant now = Instant.now();
-        Instant expires = Instant.ofEpochMilli(expiryTime * 1000L);
-        if (clockOffset != 0) {
-            expires = expires.plusSeconds(clockOffset);
+        Instant expires;
+        try {
+            expires = Instant.ofEpochSecond(expiryTime);
+            if (clockOffset != 0) {
+                expires = expires.plusSeconds(clockOffset);
+            }
+        } catch (RuntimeException ex) {
+            throw new JwtException("The token has expired", ex);
         }
         if (expires.isBefore(now)) {
             throw new JwtException("The token has expired");
@@ -69,10 +74,15 @@ public final class JwtUtils {
         }
 
         Instant validCreation = Instant.now();
-        if (clockOffset != 0) {
-            validCreation = validCreation.plusSeconds(clockOffset);
+        Instant notBeforeDate;
+        try {
+            if (clockOffset != 0) {
+                validCreation = validCreation.plusSeconds(clockOffset);
+            }
+            notBeforeDate = Instant.ofEpochSecond(notBeforeTime);
+        } catch (RuntimeException ex) {
+            throw new JwtException("The token cannot be accepted yet", ex);
         }
-        Instant notBeforeDate = Instant.ofEpochMilli(notBeforeTime * 1000L);
 
         // Check to see if the not before time is in the future
         if (notBeforeDate.isAfter(validCreation)) {
@@ -89,11 +99,20 @@ public final class JwtUtils {
             return;
         }
 
-        Instant createdDate = Instant.ofEpochMilli(issuedAtInSecs * 1000L);
+        Instant createdDate;
+        try {
+            createdDate = Instant.ofEpochSecond(issuedAtInSecs);
+        } catch (RuntimeException ex) {
+            throw new JwtException("Invalid issuedAt", ex);
+        }
 
         Instant validCreation = Instant.now();
-        if (clockOffset != 0) {
-            validCreation = validCreation.plusSeconds(clockOffset);
+        try {
+            if (clockOffset != 0) {
+                validCreation = validCreation.plusSeconds(clockOffset);
+            }
+        } catch (RuntimeException ex) {
+            throw new JwtException("Invalid issuedAt", ex);
         }
 
         // Check to see if the IssuedAt time is in the future
@@ -113,6 +132,11 @@ public final class JwtUtils {
     }
 
     public static void validateJwtAudienceRestriction(JwtClaims claims, Message message) {
+        validateJwtAudienceRestriction(claims, message, false);
+    }
+
+    public static void validateJwtAudienceRestriction(JwtClaims claims, Message message,
+                                                      boolean audienceRequired) {
         // If the expected audience is configured, a matching "aud" must be present
         String expectedAudience = (String)message.getContextualProperty(JwtConstants.EXPECTED_CLAIM_AUDIENCE);
         if (expectedAudience != null) {
@@ -122,8 +146,11 @@ public final class JwtUtils {
             throw new JwtException("Invalid audience restriction");
         }
 
-        // Otherwise if we have no aud claims then the token is valid
+        // Otherwise if we have no aud claims then the token is valid, unless an audience is required
         if (claims.getAudiences().isEmpty()) {
+            if (audienceRequired) {
+                throw new JwtException("Invalid audience restriction");
+            }
             return;
         }
 
@@ -138,8 +165,13 @@ public final class JwtUtils {
 
     public static void validateTokenClaims(JwtClaims claims, int timeToLive, int clockOffset,
                                            boolean validateAudienceRestriction) {
-        // If we have no issued time then we need to have an expiry
-        boolean expiredRequired = claims.getIssuedAt() == null;
+        validateTokenClaims(claims, timeToLive, clockOffset, validateAudienceRestriction, false);
+    }
+
+    public static void validateTokenClaims(JwtClaims claims, int timeToLive, int clockOffset,
+                                           boolean validateAudienceRestriction, boolean audienceRequired) {
+        // A positive TTL bounds the token age from its issued time.
+        boolean expiredRequired = claims.getIssuedAt() == null || timeToLive <= 0;
         validateJwtExpiry(claims, clockOffset, expiredRequired);
 
         validateJwtNotBefore(claims, clockOffset, false);
@@ -149,7 +181,8 @@ public final class JwtUtils {
         validateJwtIssuedAt(claims, timeToLive, clockOffset, issuedAtRequired);
 
         if (validateAudienceRestriction) {
-            validateJwtAudienceRestriction(claims, PhaseInterceptorChain.getCurrentMessage());
+            validateJwtAudienceRestriction(claims, PhaseInterceptorChain.getCurrentMessage(),
+                                           audienceRequired);
         }
     }
 

@@ -23,6 +23,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import jakarta.annotation.Priority;
@@ -47,6 +48,7 @@ import org.apache.cxf.jaxrs.utils.JAXRSUtils;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.PhaseInterceptorChain;
 import org.apache.cxf.rs.security.jose.common.JoseConstants;
+import org.apache.cxf.rs.security.jose.jwt.JwtConstants;
 import org.apache.cxf.rs.security.oauth2.common.AccessTokenValidation;
 import org.apache.cxf.rs.security.oauth2.common.AuthenticationMethod;
 import org.apache.cxf.rs.security.oauth2.common.OAuthContext;
@@ -74,12 +76,13 @@ public class OAuthRequestFilter extends AbstractAccessTokenValidator
     private String audience;
     private String issuer;
     private boolean completeAudienceMatch;
-    private boolean audienceIsEndpointAddress = true;
+    private boolean audienceIsEndpointAddress;
     private boolean checkFormData;
     private List<String> requiredScopes = Collections.emptyList();
     private boolean allPermissionsMatch;
     private boolean blockPublicClients;
     private AuthenticationMethod am;
+    private final AtomicBoolean audienceWarningLogged = new AtomicBoolean();
 
     @Override
     public void filter(ContainerRequestContext context) {
@@ -100,6 +103,12 @@ public class OAuthRequestFilter extends AbstractAccessTokenValidator
         }
         String authScheme = authParts[0];
         String authSchemeData = authParts[1];
+
+        // Make the configured audience available to JWT access token validators, unless an
+        // expected audience has already been configured
+        if (audience != null && m.getContextualProperty(JwtConstants.EXPECTED_CLAIM_AUDIENCE) == null) {
+            m.put(JwtConstants.EXPECTED_CLAIM_AUDIENCE, audience);
+        }
 
         // Get the access token
         AccessTokenValidation accessTokenV = getAccessTokenValidation(authScheme, authSchemeData, null);
@@ -138,7 +147,7 @@ public class OAuthRequestFilter extends AbstractAccessTokenValidator
 
         if (accessTokenV.getClientIpAddress() != null) {
             String remoteAddress = getMessageContext().getHttpServletRequest().getRemoteAddr();
-            if (remoteAddress == null || accessTokenV.getClientIpAddress().equals(remoteAddress)) {
+            if (remoteAddress == null || !accessTokenV.getClientIpAddress().equals(remoteAddress)) {
                 String message = "Client IP Address is invalid";
                 LOG.warning(message);
                 throw ExceptionUtils.toForbiddenException(null, null);
@@ -272,11 +281,17 @@ public class OAuthRequestFilter extends AbstractAccessTokenValidator
     }
 
     protected String validateAudiences(List<String> audiences) {
+        if (audience == null && !audienceIsEndpointAddress
+            && audienceWarningLogged.compareAndSet(false, true)) {
+            LOG.warning("No audience is configured and audienceIsEndpointAddress is disabled, so access "
+                + "token audiences will not be validated. Configure the \"audience\" property to restrict "
+                + "this resource server to tokens issued for it.");
+        }
         if (StringUtils.isEmpty(audiences) && audience == null) {
             return null;
         }
         if (audience != null) {
-            if (audiences.contains(audience)) {
+            if (audiences != null && audiences.contains(audience)) {
                 return audience;
             }
             AuthorizationUtils.throwAuthorizationFailure(supportedSchemes, realm);
@@ -286,13 +301,37 @@ public class OAuthRequestFilter extends AbstractAccessTokenValidator
         }
         String requestPath = (String)PhaseInterceptorChain.getCurrentMessage().get(Message.REQUEST_URL);
         for (String s : audiences) {
-            boolean matched = completeAudienceMatch ? requestPath.equals(s) : requestPath.startsWith(s);
+            // In non-exact mode, only allow prefix matches at path/query/fragment boundaries.
+            boolean matched = completeAudienceMatch ? requestPath.equals(s)
+                : matchesAudiencePrefix(requestPath, s);
             if (matched) {
                 return s;
             }
         }
         AuthorizationUtils.throwAuthorizationFailure(supportedSchemes, realm);
         return null;
+    }
+
+    /**
+     * Checks whether a configured audience matches a request URL using safe prefix semantics.
+     * <p>
+     * This keeps subtree-style matching (for example, "/api/read" matching "/api/read/item")
+     * but prevents same-prefix sibling matches (for example, "/api/readadmin").
+     * A match is accepted only when the configured audience is an exact match, ends with '/',
+     * or is followed by a URL boundary character ('/', '?', '#').
+     */
+    protected boolean matchesAudiencePrefix(String requestPath, String configuredAudience) {
+        if (requestPath == null || configuredAudience == null) {
+            return false;
+        }
+        if (!requestPath.startsWith(configuredAudience)) {
+            return false;
+        }
+        if (requestPath.length() == configuredAudience.length() || configuredAudience.endsWith("/")) {
+            return true;
+        }
+        char boundary = requestPath.charAt(configuredAudience.length());
+        return boundary == '/' || boundary == '?' || boundary == '#';
     }
 
     public void setCheckFormData(boolean checkFormData) {

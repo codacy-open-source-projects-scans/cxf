@@ -70,6 +70,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("PMD.UnusedReturnValue")
 public class ClientMtomXopTest extends AbstractBusClientServerTestBase {
     public static final String PORT = allocatePort(ClientMtomXopTest.class);
     public static final QName MTOM_PORT = new QName("http://cxf.apache.org/mime", "TestMtomPort");
@@ -417,7 +418,7 @@ public class ClientMtomXopTest extends AbstractBusClientServerTestBase {
         }
         byte[] data = new byte[(int)fileSize];
         this.getClass().getResourceAsStream("/wsdl/mtom_xop.wsdl").read(data);
-        String stringValue = new String(data, "utf-8");
+        String stringValue = new String(data, StandardCharsets.UTF_8);
         XopStringType xsv = new XopStringType();
         xsv.setAttachinfo(stringValue);
         xsv.setName("eman");

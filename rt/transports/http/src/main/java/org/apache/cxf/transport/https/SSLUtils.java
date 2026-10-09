@@ -18,6 +18,7 @@
  */
 package org.apache.cxf.transport.https;
 
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -25,6 +26,7 @@ import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
@@ -44,6 +46,7 @@ import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.StandardConstants;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
@@ -66,6 +69,38 @@ public final class SSLUtils {
         //Helper class
     }
 
+    public static String[] getProtocolsToInclude(List<String> includeProtocols,
+                                                 List<String> excludeProtocols,
+                                                 String[] defaultProtocols,
+                                                 String[] supportedProtocols)
+        throws GeneralSecurityException {
+        boolean hasInclude = includeProtocols != null && !includeProtocols.isEmpty();
+        boolean hasExclude = excludeProtocols != null && !excludeProtocols.isEmpty();
+        if (!hasInclude && !hasExclude) {
+            return defaultProtocols;
+        }
+
+        List<String> protocols = new ArrayList<>();
+        if (hasInclude) {
+            for (String supported : supportedProtocols) {
+                if (includeProtocols.contains(supported)) {
+                    protocols.add(supported);
+                }
+            }
+        } else {
+            protocols.addAll(Arrays.asList(defaultProtocols));
+        }
+        if (hasExclude) {
+            protocols.removeAll(excludeProtocols);
+        }
+        if (protocols.isEmpty()) {
+            throw new GeneralSecurityException(
+                "No TLS protocol remains enabled after applying the configured"
+                + " includeProtocols/excludeProtocols constraints");
+        }
+        return protocols.toArray(new String[0]);
+    }
+
     public static HostnameVerifier getHostnameVerifier(TLSClientParameters tlsClientParameters) {
         HostnameVerifier verifier;
 
@@ -83,6 +118,12 @@ public final class SSLUtils {
     
     public static SSLContextInitParameters getSSLContextInitParameters(TLSParameterBase parameters) 
             throws GeneralSecurityException {
+        return getSSLContextInitParameters(parameters, false);
+    }
+
+    public static SSLContextInitParameters getSSLContextInitParameters(TLSParameterBase parameters,
+                                                                       boolean addHostnameVerifier)
+            throws GeneralSecurityException {
         
         final SSLContextInitParameters contextParameters = new SSLContextInitParameters();
 
@@ -95,6 +136,15 @@ public final class SSLUtils {
         TrustManager[] trustManagers = parameters.getTrustManagers();
         if (trustManagers == null && parameters instanceof TLSClientParameters) {
             trustManagers = org.apache.cxf.configuration.jsse.SSLUtils.getDefaultTrustStoreManagers(LOG);
+        }
+        if (trustManagers != null && addHostnameVerifier && parameters instanceof TLSClientParameters) {
+            trustManagers = Arrays.copyOf(trustManagers, trustManagers.length);
+            HostnameVerifier verifier = getHostnameVerifier((TLSClientParameters)parameters);
+            for (int i = 0; i < trustManagers.length; i++) {
+                if (trustManagers[i] instanceof X509TrustManager) {
+                    trustManagers[i] = new X509TrustManagerWrapper((X509TrustManager)trustManagers[i], verifier);
+                }
+            }
         }
         
         contextParameters.setKeyManagers(configuredKeyManagers);
@@ -118,17 +168,8 @@ public final class SSLUtils {
         SSLContext ctx = provider == null ? SSLContext.getInstance(protocol) : SSLContext
             .getInstance(protocol, provider);
 
-        final SSLContextInitParameters initParams = getSSLContextInitParameters(parameters);
-        TrustManager[] tms = initParams.getTrustManagers();
-        if (tms != null && addHNV && parameters instanceof TLSClientParameters) {
-            HostnameVerifier hnv = getHostnameVerifier((TLSClientParameters)parameters);
-            for (int i = 0; i < tms.length; i++) {
-                if (tms[i] instanceof  X509TrustManager) {
-                    tms[i] = new X509TrustManagerWrapper((X509TrustManager)tms[i], hnv);
-                }
-            }
-        }
-        ctx.init(initParams.getKeyManagers(), tms, parameters.getSecureRandom());
+        final SSLContextInitParameters initParams = getSSLContextInitParameters(parameters, addHNV);
+        ctx.init(initParams.getKeyManagers(), initParams.getTrustManagers(), parameters.getSecureRandom());
 
         if (parameters instanceof TLSClientParameters && ctx.getClientSessionContext() != null) {
             ctx.getClientSessionContext().setSessionTimeout(((TLSClientParameters)parameters).getSslCacheTimeout());
@@ -171,13 +212,55 @@ public final class SSLUtils {
 
         SSLEngine serverEngine = sslContext.createSSLEngine();
         serverEngine.setUseClientMode(false);
-        serverEngine.setNeedClientAuth(parameters.getClientAuthentication().isRequired());
+
+        List<String> includeProtocols = parameters.getIncludeProtocols();
+        List<String> excludeProtocols = parameters.getExcludeProtocols();
+        if (!includeProtocols.isEmpty() || !excludeProtocols.isEmpty()) {
+            serverEngine.setEnabledProtocols(
+                getProtocolsToInclude(
+                    includeProtocols,
+                    excludeProtocols,
+                    serverEngine.getEnabledProtocols(),
+                    serverEngine.getSupportedProtocols()));
+        }
+
+        String[] cipherSuites =
+            org.apache.cxf.configuration.jsse.SSLUtils.getCiphersuitesToInclude(
+                parameters.getCipherSuites(),
+                parameters.getCipherSuitesFilter(),
+                serverEngine.getEnabledCipherSuites(),
+                serverEngine.getSupportedCipherSuites(),
+                LOG);
+        serverEngine.setEnabledCipherSuites(cipherSuites);
+
+        org.apache.cxf.configuration.security.ClientAuthentication clientAuth =
+            parameters.getClientAuthentication();
+        if (clientAuth != null) {
+            if (clientAuth.isSetWant()) {
+                serverEngine.setWantClientAuth(clientAuth.isWant());
+            }
+            if (clientAuth.isSetRequired()) {
+                serverEngine.setNeedClientAuth(clientAuth.isRequired());
+            }
+        }
         return serverEngine;
     }
 
+    /**
+     * @deprecated use {@link #createClientSSLEngine(TLSClientParameters, String, int)}
+     */
+    @Deprecated
     public static SSLEngine createClientSSLEngine(TLSClientParameters parameters) throws Exception {
         SSLContext sslContext = getSSLContext(parameters);
         SSLEngine clientEngine = sslContext.createSSLEngine();
+        clientEngine.setUseClientMode(true);
+        return clientEngine;
+    }
+
+    public static SSLEngine createClientSSLEngine(TLSClientParameters parameters,
+                                                   String peerHost, int peerPort) throws Exception {
+        SSLContext sslContext = getSSLContext(parameters, true);
+        SSLEngine clientEngine = sslContext.createSSLEngine(peerHost, peerPort);
         clientEngine.setUseClientMode(true);
         return clientEngine;
     }
@@ -244,6 +327,11 @@ public final class SSLUtils {
             } else {
                 delegate.checkServerTrusted(chain, s);
             }
+            // certificates are valid, now check the hostname regardless of the
+            // delegate's type - see the SSLEngine overload below
+            if (socket instanceof SSLSocket) {
+                verifyPeerHostname(chain, ((SSLSocket)socket).getHandshakeSession());
+            }
         }
 
         private String getHostName(List<SNIServerName> names) {
@@ -267,26 +355,38 @@ public final class SSLUtils {
                 throws CertificateException {
             if (extendedDelegate != null) {
                 extendedDelegate.checkServerTrusted(chain, s, new SSLEngineWrapper(engine));
-                //certificates are valid, now check hostnames
-                SSLSession session = engine.getHandshakeSession();
-                List<SNIServerName> names = null;
-                if (session instanceof ExtendedSSLSession) {
-                    ExtendedSSLSession extSession = (ExtendedSSLSession)session;
-                    names = extSession.getRequestedServerNames();
-                }
-                
-                boolean identifiable = false;
-                String peerHost = session.getPeerHost();
-                String hostname = getHostName(names);
-                session = new SSLSessionWrapper(session, chain);
-                if (hostname != null && verifier.verify(hostname, session)) {
-                    identifiable = true;
-                }
-                if (!identifiable && !verifier.verify(peerHost, session)) {
-                    throw new CertificateException("No name matching " + peerHost + " found");
-                }                
             } else {
                 delegate.checkServerTrusted(chain, s);
+            }
+            // certificates are valid, now check the hostname. This must run regardless
+            // of the delegate's type: JSSE endpoint identification is deliberately
+            // suppressed (SSLEngineWrapper.getSSLParameters), so if the verifier were
+            // skipped for a plain X509TrustManager delegate no hostname check would
+            // happen anywhere and any certificate the delegate trusts would enable MITM.
+            verifyPeerHostname(chain, engine.getHandshakeSession());
+        }
+
+        private void verifyPeerHostname(X509Certificate[] chain, SSLSession session)
+                throws CertificateException {
+            if (session == null) {
+                throw new CertificateException(
+                    "No handshake session available to verify the peer hostname");
+            }
+            List<SNIServerName> names = null;
+            if (session instanceof ExtendedSSLSession) {
+                ExtendedSSLSession extSession = (ExtendedSSLSession)session;
+                names = extSession.getRequestedServerNames();
+            }
+
+            boolean identifiable = false;
+            String peerHost = session.getPeerHost();
+            String hostname = getHostName(names);
+            SSLSession wrappedSession = new SSLSessionWrapper(session, chain);
+            if (hostname != null && verifier.verify(hostname, wrappedSession)) {
+                identifiable = true;
+            }
+            if (!identifiable && !verifier.verify(peerHost, wrappedSession)) {
+                throw new CertificateException("No name matching " + peerHost + " found");
             }
         }
 
@@ -530,5 +630,44 @@ public final class SSLUtils {
             return session.getPeerCertificateChain();
         }
     };
+
+    /**
+     * Applies the given named groups to {@code SSLParameters} via reflection.
+     * {@code SSLParameters.setNamedGroups()} requires JDK 20+; this method
+     * silently skips the call on older JDKs.
+     */
+    public static void applyNamedGroups(SSLParameters params, List<String> namedGroups) {
+        if (namedGroups == null || namedGroups.isEmpty()) {
+            return;
+        }
+        try {
+            Method m = SSLParameters.class.getMethod("setNamedGroups", String[].class);
+            m.invoke(params, (Object) namedGroups.toArray(new String[0]));
+        } catch (NoSuchMethodException e) {
+            LOG.fine("SSLParameters.setNamedGroups() not available on this JDK; namedGroups ignored");
+        } catch (ReflectiveOperationException e) {
+            LOG.warning("Failed to apply TLS namedGroups: " + e.getMessage());
+        }
+    }
+
+    // Reflection-based BC JSSE path: avoids a compile-time dependency on bctls-jdk18on.
+    public static void applyNamedGroupsBC(SSLEngine sslEngine, List<String> namedGroups) {
+        if (namedGroups == null || namedGroups.isEmpty()) {
+            return;
+        }
+        try {
+            Class<?> bcEngineClass = Class.forName("org.bouncycastle.jsse.BCSSLEngine");
+            if (!bcEngineClass.isInstance(sslEngine)) {
+                return;
+            }
+            Class<?> bcParamsClass = Class.forName("org.bouncycastle.jsse.BCSSLParameters");
+            Object bcParams = bcEngineClass.getMethod("getParameters").invoke(sslEngine);
+            bcParamsClass.getMethod("setNamedGroups", String[].class)
+                .invoke(bcParams, (Object) namedGroups.toArray(new String[0]));
+            bcEngineClass.getMethod("setParameters", bcParamsClass).invoke(sslEngine, bcParams);
+        } catch (ReflectiveOperationException e) {
+            LOG.fine("Could not apply named groups via BC JSSE engine: " + e.getMessage());
+        }
+    }
 
 }

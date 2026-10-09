@@ -27,7 +27,7 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-parent</artifactId>
-        <version>4.2.1-SNAPSHOT</version>
+        <version>4.2.5-SNAPSHOT</version>
         <relativePath>../../../parent/pom.xml</relativePath>
     </parent>
     <properties>
@@ -42,6 +42,7 @@
             jakarta.xml.bind*;version="${cxf.osgi.jakarta.bind.version}",
             jakarta.annotation*;version="${cxf.osgi.jakarta.annotation.version}"
         </cxf.osgi.import>
+        <cxf.surefire.fork.vmargs.extra>-javaagent:${org.mockito:mockito-core:jar}</cxf.surefire.fork.vmargs.extra>
     </properties>
     <dependencies>
         <dependency>
@@ -147,7 +148,15 @@
                 <exclusion>
                     <groupId>org.bouncycastle</groupId>
                     <artifactId>*</artifactId>
-                 </exclusion>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -241,6 +250,18 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-dependency-plugin</artifactId>
+                 <executions>
+                     <execution>
+                         <phase>generate-test-resources</phase>
+                         <goals>
+                             <goal>properties</goal>
+                         </goals>
+                     </execution>
+                 </executions>
+             </plugin>
         </plugins>
     </build>
 </project>

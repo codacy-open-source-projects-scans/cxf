@@ -37,8 +37,6 @@ import org.apache.cxf.configuration.security.FiltersType;
 public class TLSParameterBase {
     protected static final Collection<String> DEFAULT_HTTPS_PROTOCOLS = 
         Arrays.asList(
-            "TLSv1", 
-            "TLSv1.1", 
             "TLSv1.2", 
             "TLSv1.3" 
         ); 
@@ -52,6 +50,7 @@ public class TLSParameterBase {
     protected SecureRandom    secureRandom;
     protected String          protocol;
     protected String          certAlias;
+    protected List<String>    namedGroups = new ArrayList<>();
     /**
      * Set the JSSE provider. If not set,
      * it uses system default.
@@ -188,5 +187,25 @@ public class TLSParameterBase {
      */
     public String getCertAlias() {
         return certAlias;
+    }
+
+    /**
+     * Sets the ordered list of TLS named groups (key-exchange groups) to offer
+     * during the handshake, e.g. {@code "X25519MLKEM768"}, {@code "x25519"}.
+     * Applied via {@code SSLParameters.setNamedGroups()} which requires JDK 20+;
+     * silently ignored on older JDKs.
+     */
+    public final void setNamedGroups(List<String> groups) {
+        namedGroups = groups;
+    }
+
+    /**
+     * Returns the configured TLS named groups list.
+     */
+    public List<String> getNamedGroups() {
+        if (namedGroups == null) {
+            namedGroups = new ArrayList<>();
+        }
+        return namedGroups;
     }
 }

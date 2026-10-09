@@ -21,7 +21,7 @@
     <parent>
         <artifactId>cxf-parent</artifactId>
         <groupId>org.apache.cxf</groupId>
-        <version>4.2.1-SNAPSHOT</version>
+        <version>4.2.5-SNAPSHOT</version>
         <relativePath>../../parent/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -33,6 +33,7 @@
     
     <properties>
         <cxf.module.name>org.apache.cxf.systests.jaxws</cxf.module.name>
+        <cxf.surefire.fork.vmargs.extra>-javaagent:${org.mockito:mockito-core:jar}</cxf.surefire.fork.vmargs.extra>
     </properties>
     
     <build>
@@ -95,6 +96,18 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-dependency-plugin</artifactId>
+                 <executions>
+                     <execution>
+                         <phase>generate-test-resources</phase>
+                         <goals>
+                             <goal>properties</goal>
+                         </goals>
+                     </execution>
+                 </executions>
+             </plugin>
         </plugins>
     </build>
     <dependencies>

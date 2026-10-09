@@ -3,7 +3,7 @@
     <parent>
         <groupId>org.apache.cxf</groupId>
         <artifactId>cxf-parent</artifactId>
-        <version>4.2.1-SNAPSHOT</version>
+        <version>4.2.5-SNAPSHOT</version>
         <relativePath>../../../parent/pom.xml</relativePath>
     </parent>
     <artifactId>cxf-rt-features-metrics</artifactId>
@@ -13,6 +13,7 @@
 
     <properties>
         <cxf.module.name>org.apache.cxf.metrics</cxf.module.name>
+        <cxf.surefire.fork.vmargs.extra>-javaagent:${org.mockito:mockito-core:jar}</cxf.surefire.fork.vmargs.extra>
     </properties>
 
     <dependencies>
@@ -73,4 +74,20 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-dependency-plugin</artifactId>
+                 <executions>
+                     <execution>
+                         <phase>generate-test-resources</phase>
+                         <goals>
+                             <goal>properties</goal>
+                         </goals>
+                     </execution>
+                 </executions>
+             </plugin>
+        </plugins>
+    </build>
 </project>

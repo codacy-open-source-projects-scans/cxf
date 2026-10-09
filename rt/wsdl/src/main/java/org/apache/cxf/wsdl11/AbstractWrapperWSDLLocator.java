@@ -18,24 +18,24 @@
  */
 package org.apache.cxf.wsdl11;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import javax.wsdl.xml.WSDLLocator;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+
+import org.w3c.dom.Document;
 
 import org.xml.sax.InputSource;
 
-public abstract class AbstractWrapperWSDLLocator implements WSDLLocator {
-    private static final List<String> ALLOWED_SCHEMES;
+import org.apache.cxf.resource.URIResolver;
+import org.apache.cxf.staxutils.StaxUtils;
 
-    static {
-        List<String> schemes = Arrays.asList("file", "http", "https", "classpath", "jar");
-        ALLOWED_SCHEMES = Collections.unmodifiableList(schemes);
-    }
+public abstract class AbstractWrapperWSDLLocator implements WSDLLocator {
 
     protected WSDLLocator parent;
     String wsdlUrl;
@@ -98,7 +98,7 @@ public abstract class AbstractWrapperWSDLLocator implements WSDLLocator {
         // Do a check on the scheme to see if it's anything that could be a security risk
         try {
             URI url = new URI(importLocation);
-            if (!(url.getScheme() == null || ALLOWED_SCHEMES.contains(url.getScheme()))) {
+            if (!(url.getScheme() == null || URIResolver.getAllowedSchemes().contains(url.getScheme()))) {
                 throw new IllegalArgumentException("The " + url.getScheme() + " URI scheme is not allowed");
             }
         } catch (URISyntaxException e) {
@@ -113,6 +113,38 @@ public abstract class AbstractWrapperWSDLLocator implements WSDLLocator {
                 lastImport = src.getSystemId();
             }
         }
+
+        // Pre-parse imported documents through CXF's hardened StaxUtils path to neutralize
+        // any XXE payloads (CWE-611) before handing the InputSource back to WSDL4J,
+        // whose DocumentBuilderFactory is not configured with XXE protections.
+        // The serialised output will contain no DOCTYPE declarations or unresolved entities.
+        if (src != null && (src.getByteStream() != null || src.getCharacterStream() != null)) {
+            String savedSystemId = src.getSystemId();
+            String savedPublicId = src.getPublicId();
+            XMLStreamReader xmlReader = null;
+            try {
+                xmlReader = StaxUtils.createXMLStreamReader(src);
+                Document doc = StaxUtils.read(xmlReader, true);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                StaxUtils.writeTo(doc, bos);
+                InputSource hardenedSrc = new InputSource(new ByteArrayInputStream(bos.toByteArray()));
+                hardenedSrc.setSystemId(savedSystemId);
+                hardenedSrc.setPublicId(savedPublicId);
+                src = hardenedSrc;
+            } catch (XMLStreamException e) {
+                throw new RuntimeException("Failed to securely parse WSDL/XSD import '"
+                                           + importLocation + "': " + e.getMessage(), e);
+            } finally {
+                if (xmlReader != null) {
+                    try {
+                        StaxUtils.close(xmlReader);
+                    } catch (XMLStreamException ex) {
+                        // ignore close failure
+                    }
+                }
+            }
+        }
+
         return src;
     }
 

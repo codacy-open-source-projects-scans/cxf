@@ -34,12 +34,21 @@ import io.micrometer.tracing.test.simple.SpansAssert;
 import org.junit.jupiter.api.AfterEach;
 
 
-public class ObservationIntegrationTest extends SampleTestRunner {
+class ObservationIntegrationTest extends SampleTestRunner {
 
     private static final String ADDRESS = "http://localhost:9282";
     private Server server;
     private ObservationFeature logging;
     private ObservationClientFeature clientLogging;
+
+    @Override
+    public TracingSetup[] getTracingSetup() {
+        return new TracingSetup[] {
+            TracingSetup.IN_MEMORY_BRAVE,
+            TracingSetup.IN_MEMORY_OTEL,
+            TracingSetup.ZIPKIN_BRAVE
+        };
+    }
 
     @AfterEach
     public void stopServer() {

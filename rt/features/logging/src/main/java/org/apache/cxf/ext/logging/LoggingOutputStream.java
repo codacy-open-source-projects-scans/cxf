@@ -21,11 +21,13 @@ package org.apache.cxf.ext.logging;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.cxf.io.CacheAndWriteOutputStream;
 
 public class LoggingOutputStream extends CacheAndWriteOutputStream {
     private boolean skipFlushingFlowThroughStream;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     LoggingOutputStream(OutputStream stream) {
         super(stream);
@@ -70,5 +72,78 @@ public class LoggingOutputStream extends CacheAndWriteOutputStream {
         skipFlushingFlowThroughStream = true;
         super.writeCacheTo(out, charsetName, limit);
         skipFlushingFlowThroughStream = false;
+    }
+
+
+    /**
+     * CXF-9251
+     * We override the write() methods in order to catch some error that would not
+     * close the CachedOutputStream (ex. IOException "Connection reset by peer").
+     * This caused ghost/delayed OUT log and possible memory-leak due to DelayedCachedOutputStreamCleaner
+     *
+     * Once closed (and logged), any late write (for example the fault chain writing the closing tags
+     * through a writer still wrapping this stream) is leading to {@code IOException} since all underlying
+     * stream are closed: some containers (e.g. Tomcat 10.1) silently accept writes after close, and
+     * caching them (by letting writes to go through) would spill into a new temp file that close()
+     * (now a no-op) could never delete.
+     */
+    @Override
+    public void write(byte[] b) throws IOException {
+        if (closed.get()) {
+            throw new IOException("The channel has been closed already");
+        }
+        try {
+            super.write(b);
+        } catch (RuntimeException | IOException ex) {
+            handleIoException(ex);
+            throw ex;
+        }
+    }
+
+    @Override
+    public void write(byte[] b, int off, int len) throws IOException {
+        if (closed.get()) {
+            throw new IOException("The channel has been closed already");
+        }
+        try {
+            super.write(b, off, len);
+        } catch (RuntimeException | IOException ex) {
+            handleIoException(ex);
+            throw ex;
+        }
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+        if (closed.get()) {
+            throw new IOException("The channel has been closed already");
+        }
+        try {
+            super.write(b);
+        } catch (RuntimeException | IOException ex) {
+            handleIoException(ex);
+            throw ex;
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        // Ensure closing only one time
+        if (closed.compareAndSet(false, true)) {
+            super.close();
+        }
+    }
+
+    private void handleIoException(Exception ex) {
+        try {
+            // Close this CachedOutputStream
+            // Write method maybe called more than one time... but we already consume the stream the first time
+            // So additional call to this.close would produce nothing
+            this.close();
+        } catch (Exception suppressed) {
+            if (ex != null) {
+                ex.addSuppressed(suppressed);
+            }
+        }
     }
 }

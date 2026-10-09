@@ -21,6 +21,8 @@ package org.apache.cxf.rs.security.oidc.rp;
 import org.apache.cxf.rs.security.jose.jwt.JwtToken;
 import org.apache.cxf.rs.security.oauth2.client.Consumer;
 import org.apache.cxf.rs.security.oauth2.common.ClientAccessToken;
+import org.apache.cxf.rs.security.oauth2.provider.OAuthServiceException;
+import org.apache.cxf.rs.security.oauth2.utils.OAuthConstants;
 import org.apache.cxf.rs.security.oidc.common.IdToken;
 import org.apache.cxf.rs.security.oidc.utils.OidcUtils;
 
@@ -42,19 +44,43 @@ public class IdTokenReader extends OidcClaimsValidator {
     }
     public JwtToken getIdJwtToken(ClientAccessToken at, String code, Consumer client) {
         String idJwtToken = at.getParameters().get(OidcUtils.ID_TOKEN);
-        JwtToken jwt = getIdJwtToken(idJwtToken, client);
+        JwtToken jwt = parseAndValidateClaims(idJwtToken, client);
         OidcUtils.validateAccessTokenHash(at, jwt, requireAtHash);
-        OidcUtils.validateCodeHash(code, jwt, requireCodeHash);
+        if (code != null) {
+            // The spec requires c_hash to be present in the id_token for hybrid flows,
+            // but we allow it to be optional for token endpoint id_tokens
+            OidcUtils.validateCodeHash(code, jwt, requireCodeHash || isHybridFlow(at));
+        }
         return jwt;
     }
     public JwtToken getIdJwtToken(ClientAccessToken at, Consumer client) {
         return getIdJwtToken(at, null, client);
     }
+    // No access_token/code is available on this path, so at_hash/c_hash binding cannot be
+    // verified here; reject tokens that assert such a binding rather than silently accepting it.
     public JwtToken getIdJwtToken(String idJwtToken, Consumer client) {
+        JwtToken jwt = parseAndValidateClaims(idJwtToken, client);
+        if (requireAtHash && jwt.getClaims().getClaim(IdToken.ACCESS_TOKEN_HASH_CLAIM) != null) {
+            throw new OAuthServiceException("at_hash claim cannot be validated without an access token");
+        }
+        if (requireCodeHash && jwt.getClaims().getClaim(IdToken.AUTH_CODE_HASH_CLAIM) != null) {
+            throw new OAuthServiceException("c_hash claim cannot be validated without an authorization code");
+        }
+        return jwt;
+    }
+
+    private JwtToken parseAndValidateClaims(String idJwtToken, Consumer client) {
         JwtToken jwt = getJwtToken(idJwtToken, client.getClientSecret());
         validateJwtClaims(jwt.getClaims(), client.getClientId(), true);
         return jwt;
     }
+
+    private boolean isHybridFlow(ClientAccessToken at) {
+        String responseType = at.getParameters().get(OAuthConstants.RESPONSE_TYPE);
+        return OidcUtils.CODE_ID_TOKEN_RESPONSE_TYPE.equals(responseType)
+            || OidcUtils.CODE_ID_TOKEN_AT_RESPONSE_TYPE.equals(responseType);
+    }
+
     private IdToken getIdTokenFromJwt(JwtToken jwt) {
         return new IdToken(jwt.getClaims().asMap());
     }

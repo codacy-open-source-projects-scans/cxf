@@ -1,33 +1,42 @@
-Apache CXF 4.1.4 Release Notes
+Apache CXF 4.2.4 Release Notes
 
 1. Overview
 
-The 4.1.x versions of Apache CXF is a significant new version of CXF
+The 4.2.x versions of Apache CXF is a significant new version of CXF
 that provides several new features and enhancements.  
 
 New features include:
-    * The release is based on JakartaEE 10
-    * Support of Spring Framework 6.1 / Spring Boot 3.3 /  Spring Security 6.3
-    * Support of OpenZipkin Brave 6.0
-    * Jetty 12
-    * Weld 5
-    * Spring LDAP 3.2
-    * Hazelcast 5.4.0
-    * Woodstox 7.0.0
-    * Hibernate 6.5
-    * Hibernate Validator 8
-    * AsyncHttpClient (AHC) 3.0.0
+    * The release is based on JakartaEE 11
+    * Support of Spring Framework 7 / Spring Boot 4 /  Spring Security 7
+    * Jetty 12.1
+    * Weld 6
+    * Spring LDAP 4
+    * Hibernate 7.2
+    * Hibernate Validator 9.1
+    * Apache Tika 3.2
+    * Jackson 3.0
+    * Tomcat 11
+    * Undertow 2.4
+    * Apache Lucene 10 (needs JDK-21)
+    * JUnit 6
+    * Apache Mina 3
+    * Apache HttpClient 5.5
+    * AssertJ 4.0
+    * Micrometer 1.16.0 / Micrometer Tracing 1.6.0
+    * Apache HttpClient5 5.6 (compression changes)
+    * JSpecify annotations (instead of jakarta.* equivalents)
+    * Glassfish Grizzly Http Server 5.0.0 (needs JDK-21)
 
 Important notes:
-* CXF 4.1 now requires Java 17 as minimum
+* CXF 4.2 now requires Java 17 as minimum
 
 Users are encouraged to review the migration guide at:
-https://cxf.apache.org/docs/41-migration-guide.html
+https://cxf.apache.org/docs/42-migration-guide.html
 for further information and requirements for upgrading from earlier
 versions of CXF.
 
 
-4.1.4 fixes over 13 JIRA issues reported by users and the community.
+4.2.4 fixes over 8 JIRA issues reported by users and the community.
 
 
 2. Installation Prerequisites 
@@ -64,45 +73,22 @@ http://issues.apache.org/jira/browse/CXF
 6. Migration notes:
 
 See the migration guide at:
-http://cxf.apache.org/docs/41-migration-guide.html
+http://cxf.apache.org/docs/42-migration-guide.html
 for caveats when upgrading.
 
 7. Specific issues, features, and improvements fixed in this version
 
 ** Bug
-    * [CXF-8691] - Logging Feature - Sensitive element with arrays
-    * [CXF-8938] - CXF forces XOP for SwA SOAP services
-    * [CXF-9136] - Add EntityPart MessageBodyReader / MessageBodyWriter support
-    * [CXF-9152] - Adding @Timed annotation to JaxWS WebService class breaks Micrometer integration
-    * [CXF-9160] - Add support for JBoss Remoting protocols in JNDI
-    * [CXF-9162] - Reusing a Client with a HttpClientHTTPConduit is not threadsafe in regards to finalization
-    * [CXF-9168] - No Micrometer Metric for requests failing schema validation on jax-ws endpoints
-    * [CXF-9170] - Server requests counted twice after fixing CXF-9168
-    * [CXF-9171] - DelayedCachedOutputStreamCleaner thread accumulation after CVE-2025-23184 fix
-    * [CXF-9173] - Default SO_LINGER induce TCP RST on each connection closure
+    * [CXF-9032] - JWK keystore type is not getting loaded if JWT contains x5t header
+    * [CXF-9234] - Concurrent DynamicClientFactory.createClient for the same WSDL url corrupts the cached schema DOM and spins forever at 100% CPU
+    * [CXF-9235] - Invocation.Builder.property() settings ignored by HTTP transport for set.content.type.for.empty.request
+    * [CXF-9240] - OAuthJSONProvider.appendJsonPair() does not escape JSON string values — output injection / malformed JSON in introspect & token responses
+    * [CXF-9241] - ImplicitConfidentialGrantService violates RFC 6749 §4.2.2 by issuing Refresh Tokens in the Implicit Flow
+    * [CXF-9245] - Race Condition in ServerLifeCycleManagerImpl#stopServer()
+    * [CXF-9250] - HttpClientHTTPConduit: failed exchange without request body is re-sent endlessly from the exceptionally callback (e.g. remote WSDL fetch)
 
 
 
 
 ** Improvement
-    * [CXF-9157] - remove jetty server from rs-sse-undertow
-    * [CXF-9165] - Remove unnecessary JDK 8 hacks
-
-
-** Wish
-    * [CXF-9159] - Support spring boot SSL bundles
-
-
-
-
-** Improvement
-    * [CXF-9145] - Inconcise handling of logging features logMulitpart and logBinary
-    * [CXF-9151] - use io.github.littleproxy:littleproxy instead of org.littleshoot:littleproxy
-
-
-
-** Task
-    * [CXF-9142] - Change async tracing tests to be order-agnostic
-
-
-
+    * [CXF-9233] - AbstractLoggingInterceptor.LIVE_LOGGING_PROP already set in the message properties, so RESP_OUT log is disable :(  

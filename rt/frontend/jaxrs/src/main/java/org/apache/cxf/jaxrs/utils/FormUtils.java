@@ -41,6 +41,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.common.util.StringUtils;
+import org.apache.cxf.common.util.SystemPropertyAction;
 import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.io.CachedOutputStream;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -54,6 +55,11 @@ import org.apache.cxf.phase.PhaseInterceptorChain;
 import org.apache.cxf.transport.http.AbstractHTTPDestination;
 
 public final class FormUtils {
+    public static final int DEFAULT_FORM_PARAMS_MAX_SIZE =
+        SystemPropertyAction.getInteger("org.apache.cxf.form-params-max-size", 104857600 /* 100Mb */);
+
+    public static final int DEFAULT_MAX_FORM_PARAM_COUNT = 500;
+
     public static final String FORM_PARAMS_FROM_HTTP_PARAMS = "set.form.parameters.from.http.parameters";
     public static final String FORM_PARAM_MAP = "org.apache.cxf.form_data";
     public static final String FORM_PARAM_MAP_DECODED = "org.apache.cxf.form_data.decoded";
@@ -61,6 +67,7 @@ public final class FormUtils {
     private static final Logger LOG = LogUtils.getL7dLogger(FormUtils.class);
     private static final String MULTIPART_FORM_DATA_TYPE = "form-data";
     private static final String MAX_FORM_PARAM_COUNT = "maxFormParameterCount";
+    private static final String MAX_FORM_PARAM_SIZE = "maxFormParameterSize";
     private static final String CONTENT_DISPOSITION_FILES_PARAM = "files";
     private FormUtils() {
 
@@ -114,10 +121,18 @@ public final class FormUtils {
         }
     }
 
+    /**
+     * @deprecated please use {@code readBody(InputStream is, String encoding, int maxSize)}
+     */
+    @Deprecated
     public static String readBody(InputStream is, String encoding) {
+        return readBody(is, encoding, -1);
+    }
+
+    public static String readBody(InputStream is, String encoding, int maxSize) {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            IOUtils.copy(is, bos, 1024);
+            IOUtils.copy(is, bos, 1024, maxSize);
             return new String(bos.toByteArray(), encoding);
         } catch (Exception ex) {
             throw ExceptionUtils.toInternalServerErrorException(ex, null);
@@ -132,6 +147,8 @@ public final class FormUtils {
         if (StringUtils.isEmpty(postBody)) {
             return;
         }
+        final int numberOfParts = estimateNumberOfParts(postBody);
+        checkNumberOfParts(m, numberOfParts);
         String[] parts = postBody.split("&");
         checkNumberOfParts(m, parts.length);
         for (String part : parts) {
@@ -286,15 +303,24 @@ public final class FormUtils {
         }
     }
 
+    /**
+     * Estimates how many parts we should expect by checking on & separator
+     */
+    private static int estimateNumberOfParts(String postBody) {
+        int count = 0;
+        int index = -1;
+        while ((index = postBody.indexOf('&', index + 1)) >= 0) {
+            ++count;
+        }
+        return count;
+    }
+
     private static void checkNumberOfParts(Message m, int numberOfParts) {
         if (m == null || m.getExchange() == null || m.getExchange().getInMessage() == null) {
             return;
         }
-        String maxPartsCountProp = (String)m.getExchange()
-            .getInMessage().getContextualProperty(MAX_FORM_PARAM_COUNT);
-        if (maxPartsCountProp == null) {
-            return;
-        }
+        final String maxPartsCountProp = MessageUtils.getContextualString(m.getExchange().getInMessage(),
+            MAX_FORM_PARAM_COUNT, Integer.toString(DEFAULT_MAX_FORM_PARAM_COUNT));
         try {
             int maxPartsCount = Integer.parseInt(maxPartsCountProp);
             if (maxPartsCount != -1 && numberOfParts >= maxPartsCount) {
@@ -308,5 +334,9 @@ public final class FormUtils {
     public static boolean isFormPostRequest(Message m) {
         return MediaType.APPLICATION_FORM_URLENCODED.equals(m.get(Message.CONTENT_TYPE))
             && HttpMethod.POST.equals(m.get(Message.HTTP_REQUEST_METHOD));
+    }
+
+    public static int getMaxFormParamsSize(Message m) {
+        return MessageUtils.getContextualInteger(m, MAX_FORM_PARAM_SIZE, DEFAULT_FORM_PARAMS_MAX_SIZE);
     }
 }

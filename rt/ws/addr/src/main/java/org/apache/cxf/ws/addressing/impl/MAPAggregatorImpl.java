@@ -470,6 +470,9 @@ public class MAPAggregatorImpl extends MAPAggregator {
 
                 if (isOneway
                     || !ContextUtils.isGenericAddress(maps.getReplyTo())) {
+                    // Fail fast before the 202 partial response is sent when the
+                    // non-anonymous ReplyTo is blocked by the decoupled-destination guard.
+                    assertDecoupledReplyToAllowed(message, maps);
                     InternalContextUtils.rebaseResponse(maps.getReplyTo(),
                                                 maps,
                                                 message);
@@ -885,18 +888,7 @@ public class MAPAggregatorImpl extends MAPAggregator {
 
             if (isFault
                 && !ContextUtils.isGenericAddress(inMAPs.getFaultTo())) {
-
-                Message m = message.getExchange().getInFaultMessage();
-                if (m == null) {
-                    m = message;
-                }
-                InternalContextUtils.rebaseResponse(inMAPs.getFaultTo(),
-                                            inMAPs,
-                                            m);
-
-                Destination destination = InternalContextUtils.createDecoupledDestination(m.getExchange(),
-                                                                                          inMAPs.getFaultTo());
-                m.getExchange().setDestination(destination);
+                rebaseOrFallbackFaultTo(message, maps, inMAPs);
             }
         }
     }
@@ -1222,6 +1214,92 @@ public class MAPAggregatorImpl extends MAPAggregator {
                                 new QName(Names.WSA_NAMESPACE_NAME,
                                           Names.WSA_NONE_ADDRESS));
         }
+    }
+
+    /**
+     * Throws a {@code wsa:DestinationUnreachable} SOAP fault when a non-anonymous
+     * {@code wsa:ReplyTo} is present but decoupled WS-Addressing is disabled.
+     * Must be called before {@link InternalContextUtils#rebaseResponse} so the fault
+     * is returned on the synchronous connection, not silently dropped after the 202.
+     */
+    private void assertDecoupledReplyToAllowed(Message message, AddressingProperties maps) {
+        EndpointReferenceType replyTo = maps.getReplyTo();
+        if (ContextUtils.isGenericAddress(replyTo)) {
+            return;
+        }
+        final String uri = replyTo.getAddress().getValue();
+
+        boolean approved = Boolean.TRUE.equals(
+            message.getExchange().get(ContextUtils.DECOUPLED_DESTINATION_APPROVED_PROPERTY));
+        if (approved) {
+            if (ContextUtils.isDecoupledDestinationSchemeAllowed(uri)) {
+                return;
+            }
+            final String reason = ContextUtils.formatDecoupledReplyToSchemeNotPermittedMessage(uri);
+            if (isSOAP12(message)) {
+                SoapFault f = new SoapFault(reason, Soap12.getInstance().getSender());
+                f.setSubCode(Names.DESTINATION_UNREACHABLE_QNAME);
+                throw f;
+            }
+            throw new SoapFault(reason, Names.DESTINATION_UNREACHABLE_QNAME);
+        }
+
+        if (ContextUtils.isDecoupledDestinationAllowed(uri)) {
+            return;
+        }
+        final String reason = ContextUtils.formatDecoupledReplyToNotPermittedMessage(uri);
+        if (isSOAP12(message)) {
+            SoapFault f = new SoapFault(reason, Soap12.getInstance().getSender());
+            f.setSubCode(Names.DESTINATION_UNREACHABLE_QNAME);
+            throw f;
+        }
+        throw new SoapFault(reason, Names.DESTINATION_UNREACHABLE_QNAME);
+    }
+
+    /**
+     * Rebases the response to the non-anonymous {@code wsa:FaultTo} endpoint when
+     * decoupled WS-Addressing is permitted, or falls back to the synchronous
+     * {@code wsa:ReplyTo} with a warning when it is not.
+     */
+    private void rebaseOrFallbackFaultTo(Message message,
+                                         AddressingProperties maps,
+                                         AddressingProperties inMAPs) {
+        final String faultToUri = inMAPs.getFaultTo().getAddress().getValue();
+        boolean approved = Boolean.TRUE.equals(
+            message.getExchange().get(ContextUtils.DECOUPLED_DESTINATION_APPROVED_PROPERTY));
+        if (approved) {
+            if (ContextUtils.isDecoupledDestinationSchemeAllowed(faultToUri)) {
+                Message m = message.getExchange().getInFaultMessage();
+                if (m == null) {
+                    m = message;
+                }
+                InternalContextUtils.rebaseResponse(inMAPs.getFaultTo(), inMAPs, m);
+                Destination destination =
+                    InternalContextUtils.createDecoupledDestination(m.getExchange(), inMAPs.getFaultTo());
+                m.getExchange().setDestination(destination);
+                return;
+            }
+            ContextUtils.logDecoupledFaultToSchemeNotAllowed(LOG, Level.WARNING, faultToUri);
+            if (inMAPs.getReplyTo() != null) {
+                maps.setTo(inMAPs.getReplyTo());
+            }
+            return;
+        }
+        if (!ContextUtils.isDecoupledDestinationAllowed(faultToUri)) {
+            ContextUtils.logDecoupledFaultToNotAllowed(LOG, Level.WARNING, faultToUri);
+            if (inMAPs.getReplyTo() != null) {
+                maps.setTo(inMAPs.getReplyTo());
+            }
+            return;
+        }
+        Message m = message.getExchange().getInFaultMessage();
+        if (m == null) {
+            m = message;
+        }
+        InternalContextUtils.rebaseResponse(inMAPs.getFaultTo(), inMAPs, m);
+        Destination destination =
+            InternalContextUtils.createDecoupledDestination(m.getExchange(), inMAPs.getFaultTo());
+        m.getExchange().setDestination(destination);
     }
 
     private boolean isSOAP12(Message message) {
