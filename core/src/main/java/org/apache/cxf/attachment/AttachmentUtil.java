@@ -412,13 +412,15 @@ public final class AttachmentUtil {
 
         AttachmentImpl att = new AttachmentImpl(id);
 
+        String cdHeader = getHeader(headers, "Content-Disposition");
+        ContentDisposition cd = StringUtils.isEmpty(cdHeader) ? null : new ContentDisposition(cdHeader);
+        String fileName = getContentDispositionFileName(cd);
+
         String ct = getHeader(headers, "Content-Type");
         if (StringUtils.isEmpty(ct)) {
-            ct = MessageUtils.getContextualString(message, ATTACHMENT_CONTENT_TYPE, "application/octet-stream");
+            ct = MessageUtils.getContextualString(message, ATTACHMENT_CONTENT_TYPE,
+                                                  getDefaultContentType(cd));
         }
-
-        String cd = getHeader(headers, "Content-Disposition");
-        String fileName = getContentDispositionFileName(cd);
 
         String encoding = null;
 
@@ -440,21 +442,40 @@ public final class AttachmentUtil {
             headers.remove("Content-Transfer-Encoding");
         }
         DataSource source = new AttachmentDataSource(ct, ins);
-        if (!StringUtils.isEmpty(fileName)) {
-            ((AttachmentDataSource)source).setName(FileUtils.stripPath(fileName));
+        String safeFileName = FileUtils.safeFileName(fileName);
+        if (!StringUtils.isEmpty(safeFileName)) {
+            ((AttachmentDataSource)source).setName(safeFileName);
         }
         att.setDataHandler(new DataHandler(source));
         return att;
+    }
+
+    /**
+     * RFC 7578, section 4.4: a multipart/form-data part without a Content-Type header
+     * defaults to "text/plain". File parts (those carrying a "filename" parameter) and
+     * all other attachments keep defaulting to "application/octet-stream".
+     */
+    private static String getDefaultContentType(ContentDisposition cd) {
+        if (cd != null && "form-data".equalsIgnoreCase(cd.getType()) && cd.getParameter("filename") == null) {
+            return "text/plain";
+        }
+        return "application/octet-stream";
     }
 
     static String getContentDispositionFileName(String cd) {
         if (StringUtils.isEmpty(cd)) {
             return null;
         }
-        ContentDisposition c = new ContentDisposition(cd);
-        String s = c.getParameter("filename");
+        return getContentDispositionFileName(new ContentDisposition(cd));
+    }
+
+    private static String getContentDispositionFileName(ContentDisposition cd) {
+        if (cd == null) {
+            return null;
+        }
+        String s = cd.getParameter("filename");
         if (s == null) {
-            s = c.getParameter("name");
+            s = cd.getParameter("name");
         }
         return s;
     }

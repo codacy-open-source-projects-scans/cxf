@@ -18,14 +18,20 @@
  */
 package org.apache.cxf.attachment;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.cxf.io.CachedOutputStream;
+import org.apache.cxf.message.Attachment;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.message.MessageImpl;
 
@@ -35,6 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
@@ -363,5 +370,87 @@ public class AttachmentUtilTest {
                 new Object())) {
             // Will throw exception
         }
+    }
+
+    @Test
+    public void testCreateAttachmentFormDataFieldDefaultsToTextPlain() throws IOException {
+        // RFC 7578, section 4.4
+        assertEquals("text/plain",
+            createAttachmentContentType("form-data; name=\"dzchunkindex\"", null));
+    }
+
+    @Test
+    public void testCreateAttachmentFormDataFileDefaultsToOctetStream() throws IOException {
+        assertEquals("application/octet-stream",
+            createAttachmentContentType("form-data; name=\"file\"; filename=\"a.bin\"", null));
+    }
+
+    @Test
+    public void testCreateAttachmentNoContentDispositionDefaultsToOctetStream() throws IOException {
+        assertEquals("application/octet-stream", createAttachmentContentType(null, null));
+    }
+
+    @Test
+    public void testCreateAttachmentFormDataFieldHonoursDefaultContentTypeProperty() throws IOException {
+        assertEquals("application/json",
+            createAttachmentContentType("form-data; name=\"field\"", "application/json"));
+    }
+
+    private static String createAttachmentContentType(String cd, String defaultCt) throws IOException {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        if (cd != null) {
+            headers.put("Content-Disposition", Collections.singletonList(cd));
+        }
+        Message message = new MessageImpl();
+        if (defaultCt != null) {
+            message.put(AttachmentUtil.ATTACHMENT_CONTENT_TYPE, defaultCt);
+        }
+        Attachment att = AttachmentUtil.createAttachment(
+            new ByteArrayInputStream("3".getBytes(StandardCharsets.UTF_8)), headers, message);
+        return att.getDataHandler().getContentType();
+    }
+
+    @Test
+    public void testCreateAttachmentStripsPathFromFilename() throws IOException {
+        assertEquals("passwd",
+            createAttachmentName("form-data; name=\"file\"; filename=\"../../../etc/passwd\""));
+        assertEquals("secret.txt",
+            createAttachmentName("form-data; name=\"file\"; filename=\"..\\..\\secret.txt\""));
+    }
+
+    @Test
+    public void testCreateAttachmentStripsExtendedFilenameTraversal() throws IOException {
+        // CXF percent-decodes the filename* value, turning %2e%2e%2f back into ../
+        assertEquals("passwd",
+            createAttachmentName("form-data; name=\"file\"; filename*=UTF-8''%2e%2e%2f%2e%2e%2fpasswd"));
+    }
+
+    @Test
+    public void testCreateAttachmentStripsCodepointEncodedTraversal() throws IOException {
+        // &#NNNN; references are decoded too: &#0046;&#0046;&#0047; becomes ../
+        assertEquals("x",
+            createAttachmentName("form-data; name=\"file\"; filename=\"&#0046;&#0046;&#0047;x\""));
+    }
+
+    @Test
+    public void testCreateAttachmentDropsUnsafeFilename() throws IOException {
+        // ".." and a trailing separator leave nothing usable, so no name is set
+        assertNull(createAttachmentName("form-data; name=\"file\"; filename=\"..\""));
+        assertNull(createAttachmentName("form-data; name=\"file\"; filename=\"reports/\""));
+    }
+
+    @Test
+    public void testCreateAttachmentNeutralisesNulInFilename() throws IOException {
+        // a NUL is replaced rather than dropped, so the part keeps a usable name
+        assertEquals("shell.jsp_.png",
+            createAttachmentName("form-data; name=\"file\"; filename=\"shell.jsp\u0000.png\""));
+    }
+
+    private static String createAttachmentName(String cd) throws IOException {
+        Map<String, List<String>> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        headers.put("Content-Disposition", Collections.singletonList(cd));
+        Attachment att = AttachmentUtil.createAttachment(
+            new ByteArrayInputStream("3".getBytes(StandardCharsets.UTF_8)), headers, new MessageImpl());
+        return att.getDataHandler().getName();
     }
 }

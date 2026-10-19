@@ -92,18 +92,18 @@
         <cxf.activemq.artemis.version>2.57.0</cxf.activemq.artemis.version>
         <cxf.ahc.version>3.0.14</cxf.ahc.version>
         <cxf.arquillian.version>1.10.2.Final</cxf.arquillian.version>
-        <cxf.arquillian.weld.container.version>4.0.0.Final</cxf.arquillian.weld.container.version>
+        <cxf.arquillian.weld.container.version>4.0.1.Final</cxf.arquillian.weld.container.version>
         <cxf.aspectj.version>1.9.25.1</cxf.aspectj.version>
         <cxf.assertj.version>4.0.0-M1</cxf.assertj.version>
         <cxf.atmosphere.version.range>[3.0, 4.0)</cxf.atmosphere.version.range>
         <cxf.atmosphere.version>3.1.0</cxf.atmosphere.version>
         <cxf.bcprov.version>1.86</cxf.bcprov.version>
-        <cxf.bclts.version>1.86.1</cxf.bclts.version>
+        <cxf.bclts.version>1.86.2</cxf.bclts.version>
         <cxf.brave.version>6.3.1</cxf.brave.version>
         <cxf.cdi.api.version>4.1.0</cxf.cdi.api.version>
         <cxf.classgraph.version>4.8.25</cxf.classgraph.version>
         <cxf.classmate.version>1.5.1</cxf.classmate.version>
-        <cxf.commons-codec.version>1.22.1</cxf.commons-codec.version>
+        <cxf.commons-codec.version>1.23.0</cxf.commons-codec.version>
         <cxf.commons-io.version>2.22.0</cxf.commons-io.version>
         <cxf.commons-jcs-jcache.version>2.2.1</cxf.commons-jcs-jcache.version>
         <cxf.commons-lang3.version>3.21.0</cxf.commons-lang3.version>
@@ -118,14 +118,13 @@
         <cxf.ehcache3.version>3.12.0</cxf.ehcache3.version>
         <cxf.el-api.version>6.0.1</cxf.el-api.version>
         <cxf.jvnet.jaxb.version>4.0.16</cxf.jvnet.jaxb.version>
-        <cxf.geronimo.jta.version>1.1.1</cxf.geronimo.jta.version>
         <cxf.geronimo.openapi.version>1.0.15</cxf.geronimo.openapi.version>
         <cxf.glassfish.el.version>4.0.2</cxf.glassfish.el.version>
         <cxf.glassfish.json.version>2.0.1</cxf.glassfish.json.version>
         <cxf.grizzly.version>5.0.3</cxf.grizzly.version>
         <cxf.hamcrest.version>3.0</cxf.hamcrest.version>
         <cxf.hazelcast.version>5.7.0</cxf.hazelcast.version>
-        <cxf.hibernate.em.version>7.4.12.Final</cxf.hibernate.em.version>
+        <cxf.hibernate.em.version>7.4.13.Final</cxf.hibernate.em.version>
         <cxf.hibernate.validator.version>9.1.4.Final</cxf.hibernate.validator.version>
         <cxf.hsqldb.version>2.7.4</cxf.hsqldb.version>
         <cxf.httpcomponents.asyncclient.version.range>[4.0,4.2)</cxf.httpcomponents.asyncclient.version.range>
@@ -133,7 +132,7 @@
         <cxf.httpcomponents.client.version>4.5.14</cxf.httpcomponents.client.version>
         <cxf.httpcomponents.core.version.range>[4.3,4.5.0)</cxf.httpcomponents.core.version.range>
         <cxf.httpcomponents.core.version>4.4.16</cxf.httpcomponents.core.version>
-        <cxf.httpcomponents.client5.version>5.6.4</cxf.httpcomponents.client5.version>
+        <cxf.httpcomponents.client5.version>5.6.5</cxf.httpcomponents.client5.version>
         <cxf.httpcomponents.core5.version>5.4.4</cxf.httpcomponents.core5.version>
         <cxf.jackson.version>3.2.3</cxf.jackson.version>
         <cxf.jackson.databind.version>3.2.3</cxf.jackson.databind.version>
@@ -187,7 +186,7 @@
         <cxf.microprofile.config.version>3.1.2</cxf.microprofile.config.version>
         <cxf.microprofile.rest.client.version>4.0</cxf.microprofile.rest.client.version>
         <cxf.microprofile.openapi.version>4.1.1</cxf.microprofile.openapi.version>
-        <cxf.mina.version>2.2.9</cxf.mina.version>
+        <cxf.mina.version>2.2.10</cxf.mina.version>
         <cxf.mockito.version>5.24.0</cxf.mockito.version>
         <cxf.msv.version>2022.7</cxf.msv.version>
         <cxf.neethi.version>3.2.4</cxf.neethi.version>
@@ -196,7 +195,7 @@
         <cxf.netty.tcnative.version>2.0.69.Final</cxf.netty.tcnative.version>
         <cxf.olingo.version>2.0.13</cxf.olingo.version>
         <cxf.openjpa.version>4.1.1</cxf.openjpa.version>
-        <cxf.opentelemetry.version>1.66.0</cxf.opentelemetry.version>
+        <cxf.opentelemetry.version>1.67.0</cxf.opentelemetry.version>
         <cxf.opentelemetry.semconv.version>1.44.0</cxf.opentelemetry.semconv.version>
         <cxf.opentracing.version>0.33.0</cxf.opentracing.version>
         <cxf.openwebbeans.version>4.1.1</cxf.openwebbeans.version>
@@ -226,7 +225,7 @@
         <cxf.swagger.ui.version>5.33.1</cxf.swagger.ui.version>
         <cxf.swagger.v3.version>2.2.55</cxf.swagger.v3.version>
         <cxf.tika.version>4.1.0</cxf.tika.version>
-        <cxf.tomcat.version>11.0.26</cxf.tomcat.version>
+        <cxf.tomcat.version>11.0.27</cxf.tomcat.version>
         <cxf.tomitribe.http.signature.version>1.8</cxf.tomitribe.http.signature.version>
         <cxf.undertow.version>2.4.4.Final</cxf.undertow.version>
         <cxf.undertow.ee.version>2.0.3.Final</cxf.undertow.ee.version>
